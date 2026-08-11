@@ -17,7 +17,6 @@ import { Download } from 'lucide-preact'
 import { modelLabel } from '~/domain/constants'
 import { num } from '~/domain/format'
 import { curveToCsv, loadingToCsv, samplesToCsv, sessionToJson } from '~/domain/export'
-import { referencePlateText } from '~/domain/reference'
 import * as analysis from '~/state/analysis'
 import { CurveChart } from './chart/CurveChart'
 import { IssuePanel } from './IssuePanel'
@@ -253,10 +252,7 @@ function PlatePanel() {
           type="button"
           data-testid="load-example"
           class="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
-          onClick={() => {
-            analysis.plateText.value = referencePlateText()
-            analysis.applyDefaultLayout(['MCF7', 'RPMI8226'])
-          }}
+          onClick={() => analysis.loadWorkedExample()}
         >
           Load the worked example
         </button>

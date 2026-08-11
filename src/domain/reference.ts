@@ -99,6 +99,24 @@ export const REFERENCE_SAMPLES = [
 /** The desired protein mass in the workbook's loading table. */
 export const REFERENCE_DESIRED_PROTEIN_UG = 400
 
+/**
+ * The rest of the workbook's loading table: a 1000 uL lane, no dye, unknowns read at 1 in 2.
+ *
+ * These four numbers are one setting, not four. 400 ug of MCF7 at this dilution is 750.7 uL of
+ * sample, which fits a 1000 uL lane and nothing smaller, and only with the 250 uL the dye would
+ * otherwise take. Change one and the table stops balancing — which is exactly the arithmetic
+ * the workbook got wrong at its cell K29, and the reason this app exists.
+ *
+ * From the second loading table of the RIPA sheet, rows 56 to 80.
+ */
+export const REFERENCE_FINAL_VOLUME_UL = 1000
+
+/** The unknowns were read at a 1 in 2 dilution; the concentrations above already include it. */
+export const REFERENCE_DILUTION_FACTOR = 2
+
+/** The unknowns, in the order the plate lays them out. */
+export const REFERENCE_SAMPLE_NAMES: readonly string[] = REFERENCE_SAMPLES.map((s) => s.name)
+
 /** The nine standards as the curve takes them, one replicate each. */
 export function referenceLevels(): StandardLevel[] {
   return REFERENCE_CONCENTRATIONS.map((conc, i) =>

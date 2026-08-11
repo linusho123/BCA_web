@@ -24,12 +24,27 @@ Feature: Carrying a plate through the analysis workflow
     AC4  A stage whose input failed reports that, rather than computing from stale values.
     AC5  Issues are shown grouped by severity, with the stage that raised them named.
     AC6  Nothing is required to be typed twice; the plate feeds standards, samples and export.
+    AC7  The worked example loads a session that computes cleanly end to end.
 
   What a session looks like before a plate is in it — the empty page, and the one restored from
   a previous visit — is in session-continuity.feature.
 
   Background:
     Given the analysis page with the workbook's plate loaded
+
+  # AC7 — the button is the first thing most people press, so it is the app's first impression.
+  #
+  # It carries the loading settings with it rather than inheriting whatever was left in the
+  # session. The workbook pairs 400 ug with a 1000 uL lane and no dye — its second loading
+  # table, rows 56 to 80 — and those three go together: 400 ug into the app's ordinary 30 uL
+  # lane needs 750.7 uL of sample, so the example would open on two errors about a target it
+  # set for itself. A demonstration that cannot run is not a demonstration.
+  Scenario: The worked example loads a session that computes without complaint
+    Given a session with no plate loaded
+    When the worked example is loaded
+    Then both samples report a loading volume
+    And every lane in the loading plan is loadable
+    And the issue panel reports nothing at error severity
 
   # AC6 — the shape of the ordinary session, end to end
   Scenario: A pasted plate carries through to loading volumes without retyping

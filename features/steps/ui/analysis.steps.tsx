@@ -145,6 +145,15 @@ Given('a session with no plate loaded', async () => {
 
 // --- When ------------------------------------------------------------------
 
+When('the worked example is loaded', async () => {
+  // The button is clicked rather than its handler called. What is being checked is that the
+  // example arrives ready to compute, and every way it could fail to — a setting it forgets to
+  // carry, a default left behind from a previous session — lives in that handler.
+  mountOnce()
+  one('load-example').click()
+  await settle()
+})
+
 When('the default layout is applied with the names {string} and {string}', async (
   _world: World,
   first: string,
@@ -403,6 +412,26 @@ Then('each issue names the stage it came from', () => {
 
 Then('the issue panel is empty', () => {
   expect(exists('issue-panel'), 'an empty session drew an issue panel').toBe(false)
+})
+
+Then('the issue panel reports nothing at error severity', () => {
+  // Warnings and notes are allowed. Real assay data has things worth saying about it, and a
+  // demonstration that had to be silent to look right would be a demonstration of nothing.
+  const errors = all(`issue-group-${Severity.ERROR}`)
+  const shown = errors.flatMap((g) => [...g.querySelectorAll('[data-testid="issue"]')])
+  const said = shown.map((i) => textOf(i)).join('; ')
+  expect(shown.length, `the page reported errors: ${said}`).toBe(0)
+})
+
+Then('every lane in the loading plan is loadable', () => {
+  const rows = [...one('loading-table').querySelectorAll<HTMLTableRowElement>('tbody tr')]
+  expect(rows.length, 'the loading table has no rows').toBeGreaterThan(0)
+  for (const row of rows) {
+    const cells = [...row.cells]
+    const name = cells[0]?.textContent ?? '?'
+    const verdict = cells[cells.length - 1]?.textContent.trim() ?? ''
+    expect(verdict, `lane "${name}" is not loadable`).toBe('yes')
+  }
 })
 
 Then('the page states that a plate is needed to begin', () => {

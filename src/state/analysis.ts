@@ -26,6 +26,13 @@ import { defaultLayout, checkOverlap, mapSamples, mapStandards } from '~/domain/
 import { EMPTY_PLATE, parsePlate, type PlateData } from '~/domain/plate'
 import { curvePlot, type CurvePlot } from '~/domain/plot'
 import {
+  REFERENCE_DESIRED_PROTEIN_UG,
+  REFERENCE_DILUTION_FACTOR,
+  REFERENCE_FINAL_VOLUME_UL,
+  REFERENCE_SAMPLE_NAMES,
+  referencePlateText,
+} from '~/domain/reference'
+import {
   analyseSamples,
   buildLoadingPlan,
   type LoadingRow,
@@ -204,6 +211,32 @@ export function applyDefaultLayout(names: readonly string[]): void {
   sampleNames.value = names
   standardRegions.value = layout.standardRegions
   sampleAssignments.value = layout.assignments
+}
+
+/**
+ * Load the workbook's own session: its plate, its layout, and the loading table it goes with.
+ *
+ * The loading settings come along deliberately. They are not decoration on the example — the
+ * workbook pairs 400 ug with a 1000 uL lane and no dye (its second loading table, rows 56 to
+ * 80), and the three only work together. Against this app's ordinary 30 uL lane, 400 ug of
+ * MCF7 is 750.7 uL of sample, so an example that brought the target without the volume would
+ * open on two errors about a target it had set for itself.
+ *
+ * Leaving them to whatever the session already held has the same problem from the other side:
+ * the example would compute or not depending on what the last visitor was doing, which is not
+ * a property a demonstration is allowed to have.
+ *
+ * The dilution factor is part of the set for the same reason. The workbook read its unknowns at
+ * 1 in 2, so at the app's default of 1 the same 400 ug asks for 1501 uL of MCF7 — over the lane
+ * by half again, and no volume in the workbook would hold it.
+ */
+export function loadWorkedExample(): void {
+  plateText.value = referencePlateText()
+  applyDefaultLayout([...REFERENCE_SAMPLE_NAMES])
+  dilutionFactor.value = REFERENCE_DILUTION_FACTOR
+  desiredProteinUg.value = REFERENCE_DESIRED_PROTEIN_UG
+  finalVolumeUL.value = REFERENCE_FINAL_VOLUME_UL
+  includeDye.value = false
 }
 
 /** Overwrite one well, leaving the rest of the pasted grid as it was. */
