@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fixed, grouped, num, percent } from './format'
+import { fixed, grouped, num, percent, ratio } from './format'
 
 /**
  * Supports every feature that quotes a number back to the user. `fixed` is the load-bearing one:
@@ -95,6 +95,39 @@ describe('grouped', () => {
 
   it('passes a non-finite value through', () => {
     expect(grouped(NaN)).toBe('NaN')
+  })
+})
+
+describe('ratio', () => {
+  it.each([
+    [1, '1×'],
+    [2, '2×'],
+    [5, '5×'],
+    [1.25, '1.25×'],
+    [1.5, '1.5×'],
+    [262.5, '262.5×'],
+  ])('writes %d as %s', (value, expected) => {
+    expect(ratio(value)).toBe(expected)
+  })
+
+  it('caps a factor no decimal can spell at the precision a person pipettes at', () => {
+    // 2000 -> 1500 is 4/3. Printed as the double it is, it reads "1.3333333333333333x" in a
+    // column whose other rows read "2x".
+    expect(ratio(2000 / 1500)).toBe('1.333×')
+    expect(num(2000 / 1500)).toBe('1.3333333333333333')
+  })
+
+  it('does not round two distinguishable factors onto each other', () => {
+    // The three decimals exist to separate these; fewer would not.
+    expect(ratio(4 / 3)).not.toBe(ratio(1.5))
+    expect(ratio(4 / 3)).not.toBe(ratio(1.25))
+  })
+
+  it('passes a non-finite factor through rather than printing "NaN×"', () => {
+    // A factor is derived by division, so a series mid-edit can produce one. It reaches the
+    // table as the word, not as a multiplier someone might read as a real instruction.
+    expect(ratio(Number.NaN)).toBe('NaN')
+    expect(ratio(Number.POSITIVE_INFINITY)).toBe('Infinity')
   })
 })
 

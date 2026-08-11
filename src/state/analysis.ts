@@ -60,15 +60,20 @@ export const dyeFraction = signal(restored.dyeFraction)
 export const procedure = signal(restored.procedure)
 
 /**
- * Whether a layout has been chosen at all.
+ * Whether there is anything here to compute.
  *
  * An empty session has to look different from a broken one — "an empty session shows what to do
  * rather than a wall of issues". Without this flag the pipeline would run on an empty plate and
  * report, correctly and uselessly, that there is no data in it.
+ *
+ * The plate alone decides it. An earlier version also counted a non-empty layout, which made
+ * every *return* visit look broken: the layout persists and the plate deliberately does not, so
+ * a restored session is assignments pointing into a plate that is not there, and the pipeline
+ * had one error per mapped well to say so. Nobody arriving at that page has done anything wrong
+ * yet, and none of those errors is one they could act on. A layout without a plate is not a
+ * session in progress — it is the shape of the next one, waiting for its numbers.
  */
-export const started = computed(
-  () => plateText.value.trim() !== '' || sampleAssignments.value.length > 0,
-)
+export const started = computed(() => plateText.value.trim() !== '')
 
 // --- stages ----------------------------------------------------------------
 

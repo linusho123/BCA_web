@@ -10,7 +10,7 @@
  */
 
 import type { CurveFit, StandardLevel } from '~/domain/curve'
-import { fixed, grouped, num, percent } from '~/domain/format'
+import { fixed, grouped, percent, ratio } from '~/domain/format'
 import type { LoadingRow, SampleResult } from '~/domain/samples'
 import type { VialPlan } from '~/domain/dilution'
 import type { Column } from './Table'
@@ -116,7 +116,7 @@ export const vialColumns: ReadonlyArray<Column<VialPlan>> = [
     key: 'df',
     header: 'Dilution',
     align: 'right',
-    cell: (v) => (v.dilutionFactor === null ? absent : `${num(v.dilutionFactor)}×`),
+    cell: (v) => (v.dilutionFactor === null ? absent : ratio(v.dilutionFactor)),
   },
   { key: 'from', header: 'From source', note: 'µL', align: 'right', cell: (v) => fixed(v.volumeFromSourceUL, 2) },
   { key: 'diluent', header: 'Diluent', note: 'µL', align: 'right', cell: (v) => fixed(v.volumeDiluentUL, 2) },

@@ -1,6 +1,6 @@
 # The specification
 
-These 18 feature files are the specification. Not a description of the code — the thing the code
+These 19 feature files are the specification. Not a description of the code — the thing the code
 is written to satisfy, and the reason to believe it still does. If a claim about this app is not
 in here, nothing is checking it.
 
@@ -16,10 +16,11 @@ directory; a scenario that cannot pass yet does not get written as a scenario.
 | `component` | Chromium | one rendered component |
 | `acceptance:ui` | Chromium | the whole page, focus and all |
 
-The split is in `vite.config.ts`, not in how the features are written. Sixteen of the eighteen
-are claims about the assay and run in node in milliseconds. Two are claims about a rendered page
-— that focus reaches what hover reaches, that a failed stage leaves its neighbours drawn — and
-those cannot be checked without a browser, so they run in one. A scenario can move between the
+The split is in `vite.config.ts`, not in how the features are written. Sixteen of the nineteen
+are claims about the assay and run in node in milliseconds. Three are claims about a rendered
+page — that focus reaches what hover reaches, that a failed stage leaves its neighbours drawn,
+that a restored session asks for a plate rather than listing what is missing — and those cannot
+be checked without a browser, so they run in one. A scenario can move between the
 two without being rewritten.
 
 ## The map
@@ -42,7 +43,8 @@ two without being rewritten.
 | `reagent/working-reagent.feature` | 10 | `domain/reagent` | F08 |
 | `export/result-export.feature` | 12 | `domain/export` | F09 |
 | `analysis/curve-plot-geometry.feature` | 12 | `domain/plot` | F12, geometry half |
-| **`analysis/analysis-workflow.feature`** | 12 | the page, the pipeline, the promises | replaces F10 |
+| **`analysis/analysis-workflow.feature`** | 10 | the page, the pipeline, the promises | replaces F10 |
+| **`analysis/session-continuity.feature`** | 3 | the page before a plate is in it | replaces F10 |
 | **`analysis/curve-plot-presentation.feature`** | 12 | the rendered chart | F12, presentation half |
 
 Bold runs in a browser. "Ported from" is the `BCA_quarto/features/F**.feature.md` file; each

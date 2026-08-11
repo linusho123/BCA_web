@@ -12,3 +12,6 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# playwright-cli scratch output (snapshots, console logs, saved downloads)
+.playwright-cli/

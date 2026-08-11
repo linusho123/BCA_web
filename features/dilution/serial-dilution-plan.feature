@@ -23,6 +23,8 @@ Feature: Planning the BSA serial dilution series
     AC4  The volume to prepare is derived as volume per well times replicate count.
     AC5  The overage factor is an input with a default of 2.1, never a hidden constant.
     AC6  A blank vial has no source, no dilution factor, and draws no source volume.
+    AC7  A dilution factor is displayed at the precision a person pipettes at, not at the
+         precision a double happens to carry.
 
   Background:
     Given the reference dilution inputs
@@ -90,6 +92,20 @@ Feature: Planning the BSA serial dilution series
   Scenario: A valid plan reports nothing at error severity
     When the dilution plan is built
     Then the plan reports no issues at error severity
+
+  # AC7 — 1500 ug/mL from a 2000 ug/mL stock is a factor of 4/3, which no decimal spells
+  # exactly. Printed raw it reads "1.3333333333333333x" in a column of pipetting instructions,
+  # where every neighbour is "2x" and the width alone suggests a precision nobody has.
+  Scenario Outline: A dilution factor reads as a ratio a person can act on
+    When the dilution plan is built
+    Then vial "<vial>" shows its dilution factor as "<shown>"
+
+    Examples:
+      | vial | shown   |
+      | A    | 1×      |
+      | B    | 1.333×  |
+      | C    | 2×      |
+      | H    | 5×      |
 
   # Boundary: below the reliable range of a P2 pipette
   @negative

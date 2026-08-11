@@ -47,7 +47,7 @@ from `src/`. The arithmetic came across intact — the workbook's coefficients r
 last digit, and `domain/reference.ts` pins them. The machinery around it did not, because it was
 never about the assay: it was the cost of running Python in a browser.
 
-The 12 `F**.feature.md` files came across as 18 `.feature` files. Each one names its origin in a
+The 12 `F**.feature.md` files came across as 19 `.feature` files. Each one names its origin in a
 header comment. `features/README.md` maps them.
 
 ## Layout
@@ -82,12 +82,12 @@ screen reader, or with reduced motion set loses nothing but convenience.
 
 | Project | Where | Tests |
 |---|---|---|
-| `unit` | node | 484 |
-| `acceptance` | node | 228 scenarios, 16 features |
+| `unit` | node | 493 |
+| `acceptance` | node | 232 scenarios, 16 features |
 | `component` | Chromium | 9 |
-| `acceptance:ui` | Chromium | 28 scenarios, 2 features |
+| `acceptance:ui` | Chromium | 29 scenarios, 3 features |
 
-749 in total, all passing, no skips and no `@todo` tags.
+763 in total, all passing, no skips and no `@todo` tags.
 
 The workflow is spec-first: a `.feature` file exists before the code that satisfies it, and every
 feature carries negative scenarios as well as happy paths. See `AGENTS.md` before changing

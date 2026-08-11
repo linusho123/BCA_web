@@ -10,7 +10,7 @@ this repo.
 npm run verify
 ```
 
-It should be green: gherkin-lint, eslint, `tsc --noEmit`, 749 tests. If it is not green when you
+It should be green: gherkin-lint, eslint, `tsc --noEmit`, 763 tests. If it is not green when you
 arrive, find out why before writing anything — a red gate you did not cause is the most useful
 thing you will learn all session.
 
@@ -76,6 +76,14 @@ exist.
 
 Do not run `--project=component --project=acceptance:ui` together — two browser projects in one
 invocation drops the Playwright connection mid-run. Run them separately.
+
+### The gate is not the whole app
+
+Every project above mounts components. None of them loads `index.html`, runs the real entry
+point, or clicks a link in the nav. Three defects have been found by `npm run build && npm run
+preview` and driving the result — a chart that never initialized, a raw float in a pipetting
+column, and a wall of errors on every return visit — after a fully green gate. Do that before
+calling a change done, and read the browser console while you are there.
 
 ### Things that will bite you in the browser projects
 

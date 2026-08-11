@@ -73,6 +73,25 @@ export function grouped(value: number, digits = 0): string {
   return frac ? `${sign}${withSeparators}.${frac}` : `${sign}${withSeparators}`
 }
 
+/**
+ * A dilution factor, as a multiplier a person can act on: "2×", "1.333×", "5×".
+ *
+ * `num()` is wrong here even though a dilution factor is a number a reader might re-enter. Most
+ * factors in a series are small integers, but any level whose concentration is not a clean
+ * fraction of its source produces a factor no decimal spells exactly — 2000 → 1500 is 4/3, and
+ * `num()` prints it as "1.3333333333333333". In a column whose other rows read "2" that width
+ * claims a precision nobody pipettes at, and it is the widest thing in the table.
+ *
+ * Three decimals, with trailing zeros dropped so an integer factor stays an integer. Enough to
+ * distinguish 1.333 from 1.5 and from 1.25, which is the whole job a reader has here.
+ */
+export function ratio(value: number): string {
+  if (!Number.isFinite(value)) return String(value)
+  const at3 = fixed(value, 3)
+  const trimmed = at3.includes('.') ? at3.replace(/0+$/, '').replace(/\.$/, '') : at3
+  return `${trimmed}×`
+}
+
 /** A percentage for display, at one decimal place. */
 export function percent(value: number | null): string {
   return value === null ? '' : `${fixed(value, 1)}%`

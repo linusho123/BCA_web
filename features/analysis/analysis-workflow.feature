@@ -25,6 +25,9 @@ Feature: Carrying a plate through the analysis workflow
     AC5  Issues are shown grouped by severity, with the stage that raised them named.
     AC6  Nothing is required to be typed twice; the plate feeds standards, samples and export.
 
+  What a session looks like before a plate is in it — the empty page, and the one restored from
+  a previous visit — is in session-continuity.feature.
+
   Background:
     Given the analysis page with the workbook's plate loaded
 
@@ -70,13 +73,6 @@ Feature: Carrying a plate through the analysis workflow
     Then the issue panel groups issues by severity
     And each issue names the stage it came from
 
-  # AC6 — the session survives a reload, because a browser tab is not a safe place to think
-  Scenario: The layout and settings are restored after a reload
-    Given the default layout applied with the names "MCF7" and "RPMI8226"
-    When the page is reloaded
-    Then the sample names and their wells are restored
-    And the blank subtraction setting is restored
-
   # AC4 — the whole point of returning issues rather than throwing
   @negative
   Scenario: A plate that will not parse leaves the later stages empty, not stale
@@ -102,14 +98,6 @@ Feature: Carrying a plate through the analysis workflow
     Then the loading panel reports an issue at error severity
     And the curve panel still shows its coefficients
     And the samples panel still shows its concentrations
-
-  # AC5 — a session with nothing in it must not look like a broken one
-  @negative
-  Scenario: An empty session shows what to do rather than a wall of issues
-    Given a session with no plate loaded
-    When the analysis page is shown
-    Then the issue panel is empty
-    And the page states that a plate is needed to begin
 
   # AC1 — restated as a refusal, because it is a promise made to the person pasting
   @negative

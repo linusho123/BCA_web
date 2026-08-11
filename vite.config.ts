@@ -13,6 +13,7 @@ import { playwright } from '@vitest/browser-playwright'
  */
 const UI_FEATURES = [
   'features/analysis/analysis-workflow.feature',
+  'features/analysis/session-continuity.feature',
   'features/analysis/curve-plot-presentation.feature',
 ] as const
 
@@ -79,9 +80,10 @@ export default defineConfig({
       //
       // Almost every feature here is a claim about the assay — an arithmetic, a guard, an
       // issue — and is proven against the domain in node, where a file runs in milliseconds.
-      // Two are claims about a rendered page: that focus reaches what hover reaches, that a
-      // failed stage leaves its neighbours drawn. Those are not checkable without a browser,
-      // so they run in one.
+      // Three are claims about a rendered page: that focus reaches what hover reaches, that a
+      // failed stage leaves its neighbours drawn, that a restored session asks for a plate
+      // rather than listing what is missing. Those are not checkable without a browser, so
+      // they run in one.
       //
       // Same Gherkin either way. The split is in the runner, not in how the features are
       // written, which is what lets a scenario move between altitudes without being rewritten.
