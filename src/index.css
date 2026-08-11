@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Tailwind 4 is configured in CSS. There is no tailwind.config.js.
+   Tokens declared here become utilities: --color-brand-500 → bg-brand-500, text-brand-500, … */
+@theme {
+  --color-brand-50: oklch(0.97 0.02 259);
+  --color-brand-500: oklch(0.62 0.19 259);
+  --color-brand-600: oklch(0.55 0.19 259);
+  --color-brand-900: oklch(0.32 0.12 259);
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Read these from JS for ECharts theming instead of duplicating the palette:
+   getComputedStyle(document.documentElement).getPropertyValue('--color-brand-500') */

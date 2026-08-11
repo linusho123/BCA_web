@@ -1,0 +1,64 @@
+// gherkin-lint-plus configuration — see docs/05-gherkin-style-guide.md
+// JSONC: comments are allowed.
+{
+  // Structure
+  "no-files-without-scenarios": "on",
+  "no-unnamed-features": "on",
+  "no-unnamed-scenarios": "on",
+  "no-dupe-feature-names": "on",
+  "no-dupe-scenario-names": ["on", "in-feature"],
+  "no-scenario-outlines-without-examples": "on",
+  "no-unused-variables": "on",
+  "no-empty-background": "on",
+  "no-background-only-scenario": "on",
+
+  // Tags
+  "no-duplicate-tags": "on",
+  "no-superfluous-tags": "on",
+  "no-homogenous-tags": "on",
+  "no-partially-commented-tag-lines": "on",
+  "one-space-between-tags": "on",
+  "allowed-tags": ["on", {
+    "tags": [
+      "@todo", "@wip", "@skip", "@fails", "@soft",
+      "@concurrent", "@sequential",
+      "@smoke", "@negative", "@a11y",
+      // Domain tags — one per area of the assay, carried on the Feature line so that
+      // `no-homogenous-tags` stays satisfied and a whole area is greppable in one pass.
+      "@linalg", "@dilution", "@plate", "@qc", "@curve",
+      "@samples", "@loading", "@reagent", "@export", "@analysis"
+    ]
+  }],
+
+  // Readability
+  "keywords-in-logical-order": "on",
+  "only-one-when": "on",
+  "use-and": "on",
+  // The rule's defaults expect Scenario at column 0. These options restore the conventional
+  // nesting used throughout docs/05 and the example feature. Verified against
+  // gherkin-lint-plus 1.0.2 — if you change the style, re-run `npm run lint:features`.
+  "indentation": ["on", {
+    "Feature": 0,
+    "Background": 2,
+    "Scenario": 2,
+    "Step": 4,
+    "Examples": 4,
+    "example": 6,
+    "given": 4,
+    "when": 4,
+    "then": 4,
+    "and": 4,
+    "but": 4,
+    "feature tag": 0,
+    "scenario tag": 2
+  }],
+  "no-trailing-spaces": "on",
+  "no-multiple-empty-lines": "on",
+  "new-line-at-eof": ["on", "yes"],
+  "file-name": ["on", { "style": "kebab-case" }],
+
+  // Size limits — a scenario that exceeds these is describing a procedure, not a behavior
+  "name-length": ["on", { "Feature": 70, "Scenario": 90, "Step": 90 }],
+  "max-scenarios-per-file": ["on", { "maxScenarios": 12, "countOutlineExamples": false }],
+  "scenario-size": ["on", { "steps-length": { "Background": 3, "Scenario": 12 } }]
+}
