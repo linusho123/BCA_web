@@ -39,7 +39,25 @@ export default defineConfig({
    */
   base: './',
 
-  plugins: [preact(), tailwindcss(), quickpickle()],
+  /**
+   * `stepTimeout` is raised from QuickPickle's 3s default because one step legitimately needs
+   * most of it.
+   *
+   * Two scenarios claim that every plotted point is reachable *in the tab order*, which can only
+   * be shown by tabbing — `.focus()` succeeds on elements a keyboard user can never reach. So
+   * they press Tab once per focusable element on the page. That cost was fine when the page held
+   * a dozen controls. It is not fine now: the 96-well grid made 96 of the page's 107 focusable
+   * elements, and at ~18ms per Tab through the browser the step needs ~1.9s of honest work
+   * against a 3s cap.
+   *
+   * 1.6x headroom is not headroom. Under `npm run verify`, where two Chromium projects run at
+   * once, those two steps time out in roughly one run in three — which is the flake recorded in
+   * features/README.md, and it is a property of the harness rather than of the app.
+   *
+   * Raised to 15s rather than made proportional: a timeout exists to catch a step that has hung,
+   * and 15s still catches one. The number to watch is the ratio, and it is now about 8x.
+   */
+  plugins: [preact(), tailwindcss(), quickpickle({ stepTimeout: 15_000 })],
 
   resolve: {
     alias: { '~': new URL('./src', import.meta.url).pathname },
@@ -62,6 +80,12 @@ export default defineConfig({
       'preact/hooks',
       'preact/jsx-runtime',
       '@preact/signals',
+      // lucide-preact calls useContext, so it is one of the dependencies that has to be bundled
+      // in the same pass as preact/hooks. It was missing from this list for as long as the list
+      // existed: the icons only reach a test through App, and until the persistence work every
+      // browser step file mounted AnalysisPage directly, so nothing imported it early enough to
+      // trigger the reload. See features/README.md on the once-observed acceptance:ui flake.
+      'lucide-preact',
       'echarts/core',
       'echarts/charts',
       'echarts/components',

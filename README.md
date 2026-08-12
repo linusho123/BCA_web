@@ -258,6 +258,12 @@ The workflow is spec-first: a `.feature` file exists before the code that satisf
 feature carries negative scenarios as well as happy paths. See `AGENTS.md` before changing
 anything, and `features/README.md` before adding a scenario.
 
+`npm run flake-hunt` runs the suite on a loop and keeps the log of any run that fails. It exists
+because one intermittent failure took a long time to pin down, and the write-up in
+`features/README.md` is worth reading before chasing another: the cause was a keyboard scenario
+whose cost grew when an unrelated feature added 96 focusable wells to the page, and it was
+invisible to every attempt that ran the browser project on its own.
+
 ## Stack
 
 Preact 10 · @preact/signals · Vite 8 · Vitest 4 · QuickPickle · Zod 4 · Tailwind 4 · ECharts 6 ·

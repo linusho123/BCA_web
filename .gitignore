@@ -15,3 +15,6 @@ coverage/
 
 # playwright-cli scratch output (snapshots, console logs, saved downloads)
 .playwright-cli/
+
+# Logs kept by scripts/flake-hunt.mjs when a run fails.
+.flake/

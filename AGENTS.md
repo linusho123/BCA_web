@@ -110,7 +110,9 @@ calling a change done, and read the browser console while you are there.
 | Vitest 4 browser mode needs a provider package | `provider: playwright()`, not `'playwright'`. |
 | `gherkin-lint` is abandoned | `gherkin-lint-plus`. |
 | TanStack has Preact adapters | `@tanstack/preact-table`, never the React one via compat. |
-| Vite optimizes deps on first import | Browser mode reloads mid-run and you end up with two Preact instances sharing no hook state. Everything the browser projects import is pre-listed in `optimizeDeps.include`. Add to it when you add a dep they use. |
+| A step that tabs the page costs one Tab per focusable element | Adding controls makes unrelated keyboard scenarios slower. The 96-well grid took that step from a dozen tabs to 109 (~1.9s) and it began timing out against QuickPickle's 3s default under `verify`. `stepTimeout` is 15s; if a keyboard step gets slow again, the page grew, and the ratio is the number to watch. |
+| A flake that only appears under `npm run verify` | Rerunning the one project cannot reproduce it — the cause is the other Chromium project competing for the machine, and isolating the suspect removes it. `npm run flake-hunt -- --project=all` before calling anything unreproducible. |
+| Vite optimizes deps on first import | Browser mode reloads mid-run and you end up with two Preact instances sharing no hook state. Everything the browser projects import is pre-listed in `optimizeDeps.include`. Add to it when you add a dep they use — and when an existing dep newly *reaches* them, which is easier to miss: `lucide-preact` had been installed for months and only became reachable from a browser test when a step file first mounted `App`. |
 
 ## 6. Reporting
 

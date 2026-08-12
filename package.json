@@ -21,6 +21,7 @@
     "test:component": "vitest --run --project=component",
     "test:acceptance": "vitest --run --project=acceptance",
     "test:acceptance:ui": "vitest --run --project=acceptance:ui",
+    "flake-hunt": "node scripts/flake-hunt.mjs",
     "verify": "npm run lint:features && npm run lint && npm run typecheck && npm test"
   },
   "dependencies": {

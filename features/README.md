@@ -99,6 +99,80 @@ Two conventions worth knowing before editing a step:
   different numbers that round the same way. What is read from the DOM is what only the DOM can
   answer.
 
+## The flake, and why it was the grid
+
+One `acceptance:ui` run failed with 2 failed, 74 passed, and the log was not kept. It is fixed,
+and the way it hid is worth more than the fix.
+
+**The cause.** Two scenarios claim that every plotted point is reachable *in the tab order*. That
+can only be shown by tabbing — `.focus()` succeeds on elements a keyboard user can never reach —
+so they press Tab once per focusable element on the page. When those scenarios were written the
+page held about a dozen controls. Then `plate-grid.feature` added the 96-well grid, and 96 of the
+page's 107 focusable elements became wells. At ~18 ms per Tab through the browser, an honest step
+now needs **~1,900 ms against QuickPickle's 3,000 ms default**. Under `npm run verify`, where two
+Chromium projects run at once, that margin is not enough and the two steps time out. `stepTimeout`
+is now 15 s, and the reasoning is in `vite.config.ts`.
+
+Nothing was wrong with the app. A feature that never mentions the keyboard made an unrelated
+keyboard scenario three times more expensive, and the cost landed on a limit nobody re-examined.
+That is the kind of coupling a scenario cannot state about itself.
+
+**Why 70 runs missed it.** Every hunt ran `acceptance:ui` alone; the failure only appears when the
+whole suite runs, because it needs the second browser project competing for the machine. Isolating
+the suspect removed the cause. Reproduce with `npx vitest --run` on a loop, not the project alone
+— roughly one run in three failed before the fix, and 9 of 9 passed after.
+
+**What dated it.** 2 + 74 = 76, and 76 was the `acceptance:ui` total for exactly two commits,
+`8864bf7` and `16e9672` — both after the grid landed, which fits.
+
+```
+npm run flake-hunt                       # 20 runs, keeps the log of any run that fails
+npm run flake-hunt -- --project=all      # every project at once — what the timeout flake needed
+npm run flake-hunt -- --cold             # clear the Vite prebundle first, every run
+```
+
+The rerun-on-failure setting Vitest offers would have been the wrong instrument here: it hides
+exactly the log this needed. `scripts/flake-hunt.mjs` keeps it instead, under `.flake/`.
+
+The search also turned up two things that were not the cause and are worth keeping:
+
+| Suspect | Verdict |
+|---|---|
+| tab budget outgrown by the 96-well grid | **the cause**, fixed |
+| `lucide-preact` missing from `optimizeDeps.include` | a real defect, fixed, unrelated |
+| `-9999` sentinel for an unmeasured mark reaching a geometric step | plausible, never observed; the wait that allowed it is now closed |
+
+The lucide one is worth reading even though it is not the answer. Vite optimizes a dependency the
+first time it is imported, and in browser mode that reload lands mid-run: a component that
+imported `preact/hooks` before it holds hooks from one prebundle while `preact` came from
+another, and every render throws `reading 'context'`. `lucide-preact` calls `useContext` and was
+never in the include list. A probe that mounted `App` in the `component` project failed 40 times
+out of 40 and passed 40 out of 40 with the one line added. It does not explain the
+`acceptance:ui` failure because Vite's scanner already reaches it there — `features/steps/ui/index.ts`
+statically imports step files that import `App` — so it was being prebundled in that project
+anyway. It reached the `component` project only when the persistence work first mounted the shell
+in a browser step, which is the same week the flake was seen. Close, and still a coincidence.
+
+The dropped suspect is worth keeping written down, because the mistake in it is easy to make
+again. `curve-plot-crowding.feature` has two *scenarios*, and "2 failed" looked like a match. It
+is not one: one of those scenarios is a four-example Outline, so the file is five *tests*, and
+tests are what the summary line counts. Two failures cannot be that file failing wholesale — a
+mutation confirmed it, reporting 4 failed rather than 2. A scenario count and a test count are
+different numbers wherever an Outline is involved, and only one of them is the one being
+compared against.
+
+What that file did leave behind is a real defect in the harness, found by looking rather than by
+reproducing. Its steps are the only ones that ask the browser for true geometry —
+`getBoundingClientRect`, `document.elementFromPoint` — and they inherit the `drawn()` wait from
+`curve-plot.steps.tsx`, which waited on the mark *count* alone. A point ECharts cannot place yet
+is rendered at an off-canvas sentinel rather than dropped, so it counted as drawn while sitting
+nowhere a pointer could reach. `drawn()` now waits for the marks to be placed as well as present.
+Forcing every mark to the sentinel fails those scenarios with the wait in place, so the guard is
+doing work; whether that race ever fired in a real run remains unproven.
+
+If it happens again the log will be under `.flake/`, and this section can stop being a list of
+things that are not the answer.
+
 ## Writing a new one
 
 The loop is `docs/04-abdd-workflow.md` in the reference library, and it does not start with code:

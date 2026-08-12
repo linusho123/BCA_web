@@ -105,11 +105,26 @@ function pointLabelled(label: string): PlotPoint {
  * The buttons are positioned from `convertToPixel`, which only answers once ECharts has laid the
  * canvas out — so a step that queried immediately after mounting would find no marks and report
  * an accessibility failure that is really a timing one.
+ *
+ * Counting is not enough on its own. A point `convertToPixel` cannot place yet is rendered at
+ * the off-canvas sentinel rather than dropped, so it is present in the count while being nowhere
+ * a pointer could reach it — and the steps that ask the browser for real geometry would then be
+ * measuring a mark parked off-screen. Waiting for the marks to be *placed* as well as present
+ * closes that gap. Whether it was ever open in a real run is unproven; see the flake section in
+ * features/README.md.
  */
 async function drawn(): Promise<void> {
   const plot = analysis.plot.value
   const expected = plot.plottable ? plot.points.length : 0
-  for (let i = 0; i < 60 && marks().length !== expected; i++) await settle()
+  for (let i = 0; i < 60; i++) {
+    if (marks().length === expected && marks().every(placed)) return
+    await settle()
+  }
+}
+
+/** Whether a mark has a real position rather than the off-canvas sentinel. */
+function placed(mark: HTMLElement): boolean {
+  return !mark.style.left.startsWith('-9999') && !mark.style.top.startsWith('-9999')
 }
 
 // --- keyboard ---------------------------------------------------------------
