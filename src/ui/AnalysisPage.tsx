@@ -15,7 +15,7 @@
 import { useEffect } from 'preact/hooks'
 import { batch, useSignal } from '@preact/signals'
 import { Download } from 'lucide-preact'
-import { FitModel, modelLabel } from '~/domain/constants'
+import { FitModel, StandardsDirection, directionLabel, modelLabel } from '~/domain/constants'
 import { num } from '~/domain/format'
 import { curveToCsv, samplesToCsv, sessionToJson } from '~/domain/export'
 import * as analysis from '~/state/analysis'
@@ -35,6 +35,12 @@ const FIT_MODELS = [
   FitModel.INVERSE_LINEAR,
 ] as const
 
+/** Default first, so the list opens on the direction this bench actually pipettes. */
+const STANDARDS_DIRECTIONS = [
+  StandardsDirection.DESCENDING,
+  StandardsDirection.ASCENDING,
+] as const
+
 export function AnalysisPage() {
   // Persistence is a side effect of the settings changing, not something a save button does.
   // Reading the snapshot inside the effect subscribes it to every signal the snapshot touches.
@@ -48,6 +54,7 @@ export function AnalysisPage() {
     analysis.blankSubtract.value,
     analysis.fitModel.value,
     analysis.dilutionFactor.value,
+    analysis.standardsDirection.value,
   ])
 
   const fit = analysis.curve.value.value
@@ -116,6 +123,20 @@ export function AnalysisPage() {
                 options={FIT_MODELS.map((m) => [m, modelLabel(m)] as const)}
                 onChange={(v) => (analysis.fitModel.value = v)}
                 hint="Cubic matches the workbook. Lower degrees need fewer standards."
+              />
+              {/*
+                Which end of the row the concentrated standard is at. It sits here rather than
+                by the plate because reading it the wrong way round is invisible on the plate —
+                the wells are right and only the pairing is wrong — and shows up in the
+                standards table below, where the tube letters are.
+              */}
+              <Select
+                label="Standard series"
+                testId="standards-direction"
+                value={analysis.standardsDirection.value}
+                options={STANDARDS_DIRECTIONS.map((d) => [d, directionLabel(d)] as const)}
+                onChange={(v) => (analysis.standardsDirection.value = v)}
+                hint="Descending: column 1 is the most concentrated tube."
               />
             </div>
 

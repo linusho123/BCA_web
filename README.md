@@ -114,6 +114,26 @@ touches nothing above it.
 Exports are CSV and JSON, built as a Blob and downloaded by the browser — the same promise as
 above, restated as a refusal.
 
+## Which end of the row the standards start at
+
+The app assumes your standard row is pipetted the way this bench pipettes it: the most
+concentrated tube (2000 µg/mL, tube A) in column 1, decreasing across to the blank in column 9.
+If your plate runs the other way — blank first, climbing to 2000 — switch **Standard series** on
+the analysis page from *Descending* to *Ascending*. Everything downstream re-fits.
+
+This matters more than it looks, because reading the series backwards is not a visible error. A
+polynomial does not care what order its points arrive in, so the wrong direction still fits — r²
+0.95 against the right direction's 0.9986, low but not obviously broken — and still plots a
+smooth line, while every tube has been paired with the wrong absorbance. In the worked example a
+sample reading 0.43 comes back as 767 µg/mL that way, where the truth is 266. Nothing on the page
+turns red. The number is just wrong, by a factor of three.
+
+Two things let you check it without re-deriving the assay. The **Tube** column in the standards
+table names the tube each set of wells was read against, so the top row should be the tube you
+actually pipetted into column 1. And the setting itself is remembered between visits, like the
+dilution factor — so if the last plate was read ascending, the next one will be too until you
+switch it back. *Start over* restores the default.
+
 ## The recovery warning
 
 The standards table has a **Recovery** column, and a standard outside 80–120 % raises a warning
@@ -204,12 +224,12 @@ screen reader, or with reduced motion set loses nothing but convenience.
 
 | Project | Where | Tests |
 |---|---|---|
-| `unit` | node | 503 |
+| `unit` | node | 509 |
 | `acceptance` | node | 213 scenarios, 15 features |
 | `component` | Chromium | 9 |
-| `acceptance:ui` | Chromium | 76 scenarios, 7 features |
+| `acceptance:ui` | Chromium | 84 scenarios, 8 features |
 
-801 in total, all passing, no skips and no `@todo` tags.
+815 in total, all passing, no skips and no `@todo` tags.
 
 The workflow is spec-first: a `.feature` file exists before the code that satisfies it, and every
 feature carries negative scenarios as well as happy paths. See `AGENTS.md` before changing

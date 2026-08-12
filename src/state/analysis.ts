@@ -15,11 +15,7 @@
  */
 
 import { computed, signal } from '@preact/signals'
-import {
-  ANALYSIS_STANDARD_CONCENTRATIONS,
-  ANALYSIS_STANDARD_TUBES,
-  type FitModel,
-} from '~/domain/constants'
+import { type FitModel, type StandardsDirection, standardSeries } from '~/domain/constants'
 import { type CurveFit, fitCurve } from '~/domain/curve'
 import { IssueCode, issue, Severity, Stage } from '~/domain/errors'
 import {
@@ -77,6 +73,7 @@ export const sampleAssignments = signal<ReadonlyArray<readonly [string, string]>
 export const blankSubtract = signal(restored.blankSubtract)
 export const fitModel = signal<FitModel>(restored.fitModel)
 export const dilutionFactor = signal(restored.dilutionFactor)
+export const standardsDirection = signal<StandardsDirection>(restored.standardsDirection)
 export const procedure = signal(restored.procedure)
 
 /**
@@ -142,8 +139,13 @@ export const mapping = computed<Staged<Mapping>>(() => {
     return staged(Stage.MAPPING, NO_MAPPING, [])
   }
 
-  const standards = mapStandards(data, regions, ANALYSIS_STANDARD_CONCENTRATIONS, {
-    tubeIds: ANALYSIS_STANDARD_TUBES,
+  // The direction decides which end of the row the concentrated tube is at, and it has to
+  // reverse the letters with the numbers — a well labelled with a tube it was not read against
+  // is the one failure here that leaves the curve looking perfect. `standardSeries` returns the
+  // pair so a caller cannot reverse one alone.
+  const series = standardSeries(standardsDirection.value)
+  const standards = mapStandards(data, regions, series.concentrations, {
+    tubeIds: series.tubeIds,
   })
   const unknowns = mapSamples(data, assignments)
   const overlap = checkOverlap(regions, assignments)
@@ -491,6 +493,7 @@ export function snapshot(): StoredSession {
     blankSubtract: blankSubtract.value,
     fitModel: fitModel.value,
     dilutionFactor: dilutionFactor.value,
+    standardsDirection: standardsDirection.value,
     procedure: procedure.value,
   }
 }
@@ -509,5 +512,6 @@ export function restore(session: StoredSession = DEFAULT_SESSION): void {
   blankSubtract.value = session.blankSubtract
   fitModel.value = session.fitModel
   dilutionFactor.value = session.dilutionFactor
+  standardsDirection.value = session.standardsDirection
   procedure.value = session.procedure
 }

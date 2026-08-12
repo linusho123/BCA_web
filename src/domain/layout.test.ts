@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { StandardsDirection, directionLabel, standardSeries } from './constants'
 import { IssueCode, Severity, hasCode, hasErrors } from './errors'
 import {
   checkOverlap,
@@ -398,5 +399,63 @@ describe('checkOverlap', () => {
   it('reports overlaps in well order, so the same layout always reads the same way', () => {
     const issues = checkOverlap(['A1:A3'], [['S', 'A3, A1']])
     expect(issues.map((i) => i.message.match(/well (\w+)/)?.[1])).toEqual(['A1', 'A3'])
+  })
+})
+
+/**
+ * Proves the domain half of features/analysis/standards-direction.feature.
+ *
+ * The mapping is exercised here rather than the constant read back, for the same reason AC7 is:
+ * `standardSeries(ASCENDING).concentrations` equalling the reversed list is the function
+ * agreeing with itself. What has to be true is that the nth well ends up paired with the nth
+ * concentration *and* the nth tube, which only mapStandards can answer.
+ */
+describe('standardSeries', () => {
+  const map = (direction: StandardsDirection) => {
+    const series = standardSeries(direction)
+    return mapStandards(PLATE, ['A1:A9'], series.concentrations, { tubeIds: series.tubeIds })
+  }
+
+  it('pairs column 1 with the most concentrated tube by default', () => {
+    const { levels, issues } = map(StandardsDirection.DESCENDING)
+    expect(hasErrors(issues)).toBe(false)
+    expect(levels[0]?.concUgPerML).toBe(2000)
+    expect(levels[0]?.tubeId).toBe('A')
+    expect(levels[0]?.replicates).toEqual([PLATE_ABSORBANCES[0]])
+    expect(levels[8]?.concUgPerML).toBe(0)
+    expect(levels[8]?.tubeId).toBe('I')
+  })
+
+  it('pairs column 1 with the blank when the plate was pipetted the other way', () => {
+    const { levels, issues } = map(StandardsDirection.ASCENDING)
+    expect(hasErrors(issues)).toBe(false)
+    expect(levels[0]?.concUgPerML).toBe(0)
+    expect(levels[0]?.tubeId).toBe('I')
+    expect(levels[0]?.replicates).toEqual([PLATE_ABSORBANCES[0]])
+    expect(levels[8]?.concUgPerML).toBe(2000)
+    expect(levels[8]?.tubeId).toBe('A')
+  })
+
+  it('reverses the tube letters with the concentrations, never one alone', () => {
+    const ascending = standardSeries(StandardsDirection.ASCENDING)
+    const descending = standardSeries(StandardsDirection.DESCENDING)
+    expect([...ascending.concentrations].reverse()).toEqual([...descending.concentrations])
+    expect([...ascending.tubeIds].reverse()).toEqual([...descending.tubeIds])
+  })
+
+  it('keeps every standard, rather than losing one off the reversed end', () => {
+    const { levels } = map(StandardsDirection.ASCENDING)
+    expect(levels).toHaveLength(PLATE_CONCENTRATIONS.length)
+    expect(new Set(levels.map((l) => l.tubeId)).size).toBe(PLATE_TUBE_IDS.length)
+  })
+
+  it('does not mutate the constant it reverses', () => {
+    standardSeries(StandardsDirection.ASCENDING)
+    expect(standardSeries(StandardsDirection.DESCENDING).concentrations[0]).toBe(2000)
+  })
+
+  it('names each direction for a reader', () => {
+    expect(directionLabel(StandardsDirection.DESCENDING)).toBe('Descending')
+    expect(directionLabel(StandardsDirection.ASCENDING)).toBe('Ascending')
   })
 })

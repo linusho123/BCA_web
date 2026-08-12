@@ -19,7 +19,7 @@
  */
 
 import { z } from 'zod'
-import { FitModel, Procedure } from '~/domain/constants'
+import { FitModel, Procedure, StandardsDirection } from '~/domain/constants'
 import { PlateTextSchema } from './upload'
 
 export const STORAGE_KEY = 'bca-web.session.v1'
@@ -41,6 +41,10 @@ export const StoredSessionSchema = z.object({
     FitModel.INVERSE_LINEAR,
   ]).default(FitModel.INVERSE_CUBIC),
   dilutionFactor: z.number().positive().finite().default(1),
+  standardsDirection: z.enum([
+    StandardsDirection.DESCENDING,
+    StandardsDirection.ASCENDING,
+  ]).default(StandardsDirection.DESCENDING),
   procedure: z.enum([
     Procedure.MICROPLATE_STANDARD,
     Procedure.MICROPLATE_REDUCED_SAMPLE,

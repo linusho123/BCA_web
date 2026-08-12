@@ -235,3 +235,57 @@ export const ANALYSIS_STANDARD_CONCENTRATIONS: readonly number[] = Object.freeze
 export const ANALYSIS_STANDARD_TUBES: readonly string[] = Object.freeze([
   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
 ])
+
+/**
+ * Which end of the row the concentrated standard is at.
+ *
+ * `DESCENDING` is the series above, unreversed: column 1 holds the 2000 ug/mL tube. It is the
+ * default because it is how this bench pipettes, and it is what AC7 of
+ * `default-plate-layout.feature` fixes.
+ *
+ * `ASCENDING` is the same series read from the other end, for a plate that was pipetted left to
+ * right. It is not a correction for a mistake — it is a different plate, and the second-commonest
+ * one, so it is a setting rather than something to re-pipette around.
+ *
+ * The two are exact inverses, and that is the property worth holding onto: reversing the series
+ * and reversing the plate cancel, so the workbook's plate read descending and a left-to-right
+ * plate read ascending fit the identical four coefficients. `standards-direction.feature` AC5
+ * asserts that against the workbook's own values rather than against "unchanged", because two
+ * directions that were both wrong would agree with each other perfectly.
+ */
+export const StandardsDirection = {
+  DESCENDING: 'descending',
+  ASCENDING: 'ascending',
+} as const
+
+export type StandardsDirection = (typeof StandardsDirection)[keyof typeof StandardsDirection]
+
+const STANDARDS_DIRECTION_LABEL: Readonly<Record<StandardsDirection, string>> = {
+  descending: 'Descending',
+  ascending: 'Ascending',
+}
+
+export function directionLabel(direction: StandardsDirection): string {
+  return STANDARDS_DIRECTION_LABEL[direction]
+}
+
+/**
+ * The series and its tube letters as the given direction pairs them across the row.
+ *
+ * Returned together rather than as two calls, because they are one fact: the nth well holds the
+ * nth concentration *from the nth tube*, and a caller that reversed one without the other would
+ * label every well with a tube it was not read against — which is the failure that survived 840
+ * tests the first time, since the fit is unharmed by it.
+ */
+export function standardSeries(direction: StandardsDirection): {
+  concentrations: readonly number[]
+  tubeIds: readonly string[]
+} {
+  if (direction === StandardsDirection.ASCENDING) {
+    return {
+      concentrations: [...ANALYSIS_STANDARD_CONCENTRATIONS].reverse(),
+      tubeIds: [...ANALYSIS_STANDARD_TUBES].reverse(),
+    }
+  }
+  return { concentrations: ANALYSIS_STANDARD_CONCENTRATIONS, tubeIds: ANALYSIS_STANDARD_TUBES }
+}

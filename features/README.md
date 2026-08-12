@@ -16,12 +16,13 @@ directory; a scenario that cannot pass yet does not get written as a scenario.
 | `component` | Chromium | one rendered component |
 | `acceptance:ui` | Chromium | the whole page, focus and all |
 
-The split is in `vite.config.ts`, not in how the features are written. Fifteen of the twenty-two
-are claims about the assay and run in node in milliseconds. Seven are claims about a rendered
+The split is in `vite.config.ts`, not in how the features are written. Fifteen of the twenty-three
+are claims about the assay and run in node in milliseconds. Eight are claims about a rendered
 page — that focus reaches what hover reaches, that a failed stage leaves its neighbours drawn,
 that a restored session asks for a plate rather than listing what is missing, that a pointer on a
-crowded mark reads back that mark — and those cannot be checked without a browser, so they run in
-one. A scenario can move between the two without being rewritten.
+crowded mark reads back that mark, that the standards table names the tube each well was read
+against — and those cannot be checked without a browser, so they run in one. A scenario can
+move between the two without being rewritten.
 
 ## The map
 
@@ -49,12 +50,15 @@ one. A scenario can move between the two without being rewritten.
 | **`analysis/plate-grid.feature`** | 9 | the 96 wells, typed into | scoped 2026-08-11 |
 | **`analysis/plate-layout-painting.feature`** | 11 | which wells hold which sample | scoped 2026-08-11 |
 | **`analysis/plate-grid-from-file.feature`** | 12 | reading a plate out of a file | scoped 2026-08-11 |
+| **`analysis/standards-direction.feature`** | 8 | which end of the row the series starts at | scoped 2026-08-12 |
 
 Bold runs in a browser. "Ported from" is the `BCA_quarto/features/F**.feature.md` file; each
 feature repeats its own provenance in a header comment, including which section of the spec
-document it came from. The last three came from a `/scope` interview rather than from the
-Quarto project, and their scope fence — what was deliberately left out, and which rejected
-options were considered — is in `spec/OUT-OF-SCOPE.md`.
+document it came from. Of the browser features, three came from a `/scope`
+interview rather than from the Quarto project — the grid, the painting and the file import — and
+their scope fence, what was deliberately left out and which rejected options were considered, is
+in `spec/OUT-OF-SCOPE.md`. `standards-direction.feature` came later still, from a bench that
+pipettes its series the other way; its header carries its own reasoning.
 
 F10 is the one that did not survive. It specified a Quarto site with Shinylive blocks: a purity
 constraint so the core could run under Pyodide, a generator that inlined it into each `.qmd`, and
