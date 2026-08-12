@@ -5,19 +5,17 @@ import { planDilutions } from './dilution'
 import {
   curveToCsv,
   dilutionPlanToCsv,
-  loadingToCsv,
   provenanceHeader,
   samplesToCsv,
   sessionToJson,
 } from './export'
 import {
   EXCEL_COEFFICIENTS,
-  REFERENCE_DESIRED_PROTEIN_UG,
   REFERENCE_DILUTION_INPUT,
   REFERENCE_SAMPLES,
   referenceFit,
 } from './reference'
-import { analyseSamples, buildLoadingPlan } from './samples'
+import { analyseSamples } from './samples'
 
 /** Proves features/export/result-export.feature. */
 
@@ -27,14 +25,6 @@ const RESULTS = analyseSamples(
   REFERENCE_SAMPLES.map((s) => ({ name: s.name, replicates: [s.absorbance] })),
   { dilutionFactor: 2 },
 )
-// 2 mL, not the workbook's 1 mL: 400 ug of the reference lysate is 750 uL of protein, and a
-// 1 mL lane has only 750 uL left once a quarter of it is reserved for dye. The workbook's own
-// lane is the infeasible case, exercised below.
-const LOADING = buildLoadingPlan(RESULTS, {
-  desiredProteinUg: REFERENCE_DESIRED_PROTEIN_UG,
-  finalVolumeUL: 2000,
-})
-
 /** Data rows only: the provenance block and the column header are not rows of results. */
 const dataRows = (csv: string): string[][] =>
   csv
@@ -156,33 +146,6 @@ describe('the sample export', () => {
   })
 })
 
-describe('the loading export', () => {
-  const csv = loadingToCsv(LOADING)
-
-  it('carries the three pipetting volumes', () => {
-    const header = headerRow(csv)
-    expect(header).toContain('protein_uL')
-    expect(header).toContain('diluent_uL')
-    expect(header).toContain('dye_uL')
-    const row = dataRows(csv)[0] as string[]
-    expect(Number(row[2])).toBeCloseTo(REFERENCE_SAMPLES[0].proteinUL, 2)
-    expect(row[6]).toBe('yes')
-    // The three volumes sum to the final volume they were computed against.
-    expect(Number(row[2]) + Number(row[3]) + Number(row[4])).toBeCloseTo(Number(row[5]), 1)
-  })
-
-  it('leaves the diluent cell empty on a lane that does not fit', () => {
-    // An infeasible lane reports its diluent as absent rather than negative: a negative number
-    // in a volume column is one glance away from being read as a volume.
-    const tight = buildLoadingPlan(RESULTS, { desiredProteinUg: 400, finalVolumeUL: 5 })
-    const row = dataRows(loadingToCsv(tight))[0] as string[]
-    expect(row[6]).toBe('no')
-    expect(row[3]).toBe('')
-    // The protein volume is still there, because it is the actionable number.
-    expect(row[2]).not.toBe('')
-  })
-})
-
 describe('issues and absences in a row', () => {
   it('carries the issue codes attached to the row that raised them', () => {
     const results = analyseSamples(FIT, [{ name: 'High', replicates: [2.5] }])
@@ -268,7 +231,7 @@ function readCsv(text: string): string[][] {
 
 describe('the session JSON', () => {
   it('round-trips the whole session', () => {
-    const json = sessionToJson({ fit: FIT, samples: RESULTS, loading: LOADING, dilutionFactor: 2 })
+    const json = sessionToJson({ fit: FIT, samples: RESULTS, dilutionFactor: 2 })
     const parsed = JSON.parse(json) as Record<string, unknown>
     expect(parsed.generatedBy).toBe('BCA_web')
     expect(typeof parsed.generatedAt).toBe('string')

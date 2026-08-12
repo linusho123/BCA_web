@@ -48,12 +48,6 @@ Feature: Exporting results with the provenance to reproduce them
     Then the CSV re-parses to 2 data rows
     And the concentration of "MCF7" reads 266.4318544865975
 
-  # AC1
-  Scenario: The loading export carries the three pipetting volumes
-    Given a feasible loading plan
-    When it is exported as CSV
-    Then the columns include "protein_uL", "diluent_uL" and "dye_uL"
-
   # AC2 — an issue that is not exported is an issue nobody acts on
   Scenario: Exported rows carry the issue codes attached to them
     Given analysed samples carrying issues
@@ -62,7 +56,7 @@ Feature: Exporting results with the provenance to reproduce them
 
   # AC5
   Scenario: A whole session round-trips through JSON
-    Given a complete session with a plate, a curve, samples and a loading plan
+    Given a complete session with a plate, a curve and samples
     When the session is serialised and parsed back
     Then the parsed session holds the same values
 

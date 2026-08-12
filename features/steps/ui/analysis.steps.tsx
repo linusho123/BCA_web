@@ -32,13 +32,13 @@ import {
   appRequests,
   coefficients,
   exists,
-  loadingVolumes,
   mount,
   mountOnce,
   one,
   plateOf,
   plateRow,
   reportedConcentrations,
+  reportedStocks,
   settle,
   textOf,
   type NetworkWatch,
@@ -178,7 +178,7 @@ When('the analysis page is shown', async () => {
 function recordBaseline(world: World): void {
   world.beforeCoefficients = coefficients()
   world.beforeConcentrations = reportedConcentrations()
-  world.beforeVolumes = loadingVolumes()
+  world.beforeStocks = reportedStocks()
 }
 
 When('well {string} is corrected to {float}', async (
@@ -191,19 +191,22 @@ When('well {string} is corrected to {float}', async (
   await settle()
 })
 
-When('the loading target is changed to {int} ug in {int} uL', async (
-  world: World,
-  protein: number,
-  volume: number,
-) => {
+When('the dilution factor is changed to {int}', async (world: World, factor: number) => {
   recordBaseline(world)
-  analysis.desiredProteinUg.value = protein
-  analysis.finalVolumeUL.value = volume
+  analysis.dilutionFactor.value = factor
   await settle()
 })
 
-When('the loading target is set to {int} uL', async (_world: World, volume: number) => {
-  analysis.finalVolumeUL.value = volume
+When('the dilution factor is set to {int}', async (_world: World, factor: number) => {
+  analysis.dilutionFactor.value = factor
+  await settle()
+})
+
+Given('a dilution factor of {int} left over from the last plate', async (
+  _world: World,
+  factor: number,
+) => {
+  analysis.dilutionFactor.value = factor
   await settle()
 })
 
@@ -241,11 +244,16 @@ Then('the dilution factor is {int}', (_world: World, expected: number) => {
   expect(analysis.dilutionFactor.value, 'the dilution factor after starting over').toBe(expected)
 })
 
-Then('the loading target is {int} ug in {int} uL', (
-  _world: World, protein: number, volume: number,
-) => {
-  expect(analysis.desiredProteinUg.value, 'protein per lane').toBe(protein)
-  expect(analysis.finalVolumeUL.value, 'final volume').toBe(volume)
+/**
+ * Read off the field rather than off the signal.
+ *
+ * The worked example is a demonstration, and what it demonstrates is what a visitor can see. A
+ * signal holding 2 behind a field showing something else would satisfy an assertion on the
+ * signal and mislead every person who pressed the button.
+ */
+Then('the page reports the dilution factor as {int}', (_world: World, expected: number) => {
+  const field = one('dilution-factor') as HTMLInputElement
+  expect(Number(field.value), 'the dilution factor shown on the page').toBe(expected)
 })
 
 When('blank subtraction is turned off', async () => {
@@ -328,12 +336,6 @@ Then('both samples report a concentration', () => {
   for (const value of values) expect(value, 'a sample reported no concentration').not.toBeNull()
 })
 
-Then('both samples report a loading volume', () => {
-  const values = loadingVolumes()
-  expect(values.length, 'the loading table holds a different number of rows').toBe(2)
-  for (const value of values) expect(value, 'a sample reported no loading volume').not.toBeNull()
-})
-
 // --- Then: the reactive contract, in both directions ------------------------
 
 Then('the curve coefficients change', (world: World) => {
@@ -356,8 +358,18 @@ Then("both samples' concentrations are unchanged", (world: World) => {
   )
 })
 
-Then("both samples' loading volumes change", (world: World) => {
-  expect(loadingVolumes(), 'the loading volumes did not change').not.toEqual(world.beforeVolumes)
+// The well reading is what the curve returned; the stock is that reading with the dilution
+// undone. Naming them apart is the whole content of the scenario that uses these two.
+Then("both samples' well concentrations are unchanged", (world: World) => {
+  expect(reportedConcentrations(), 'the well concentrations changed').toEqual(
+    world.beforeConcentrations,
+  )
+})
+
+Then("both samples' stock concentrations change", (world: World) => {
+  expect(reportedStocks(), 'the stock concentrations did not change').not.toEqual(
+    world.beforeStocks,
+  )
 })
 
 // --- Then: the legacy workbook ---------------------------------------------
@@ -469,17 +481,6 @@ Then('the issue panel reports nothing at error severity', () => {
   expect(shown.length, `the page reported errors: ${said}`).toBe(0)
 })
 
-Then('every lane in the loading plan is loadable', () => {
-  const rows = [...one('loading-table').querySelectorAll<HTMLTableRowElement>('tbody tr')]
-  expect(rows.length, 'the loading table has no rows').toBeGreaterThan(0)
-  for (const row of rows) {
-    const cells = [...row.cells]
-    const name = cells[0]?.textContent ?? '?'
-    const verdict = cells[cells.length - 1]?.textContent.trim() ?? ''
-    expect(verdict, `lane "${name}" is not loadable`).toBe('yes')
-  }
-})
-
 Then('the page states that a plate is needed to begin', () => {
   expect(textOf(one('empty-state'))).toContain('A plate is needed to begin.')
 })
@@ -535,12 +536,15 @@ Then('both samples are flagged {string} at error severity', (_world: World, code
 
 // --- Then: one panel fails, the others stay drawn ---------------------------
 
-Then('the loading panel reports an issue at error severity', () => {
-  const codes = analysis.loading.value.issues
+Then('the samples panel reports an issue at error severity', () => {
+  const codes = analysis.samples.value.issues
     .filter((i) => i.severity === Severity.ERROR)
     .map((i) => i.code)
-  expect(codes, 'the loading stage reported no error').not.toEqual([])
-  expect(exists('loading-panel'), 'the loading panel vanished instead of reporting').toBe(true)
+  expect(codes, 'the samples stage reported no error').not.toEqual([])
+})
+
+Then('the samples panel is still rendered', () => {
+  expect(exists('samples-panel'), 'the samples panel vanished instead of reporting').toBe(true)
 })
 
 Then('the curve panel still shows its coefficients', () => {

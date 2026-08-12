@@ -18,7 +18,7 @@ import type { CurveFit } from './curve'
 import type { DilutionPlan } from './dilution'
 import type { Issue } from './errors'
 import { fixed } from './format'
-import type { LoadingRow, SampleResult } from './samples'
+import type { SampleResult } from './samples'
 
 const COMMENT = '#'
 
@@ -218,38 +218,6 @@ export function samplesToCsv(
   return withProvenance(header, body)
 }
 
-/** One row per loading lane. */
-export function loadingToCsv(
-  rows: readonly LoadingRow[],
-  options: ProvenanceOptions = {},
-): string {
-  const header = provenanceHeader(options)
-
-  let body = csvRow([
-    'sample',
-    'conc_ug_per_uL',
-    'protein_uL',
-    'diluent_uL',
-    'dye_uL',
-    'final_volume_uL',
-    'feasible',
-    'issues',
-  ])
-  for (const r of rows) {
-    body += csvRow([
-      r.name,
-      cell(r.concUgPerUL, 6),
-      cell(r.proteinUL, 2),
-      cell(r.diluentUL, 2),
-      cell(r.dyeUL, 2),
-      cell(r.finalVolumeUL, 2),
-      r.feasible ? 'yes' : 'no',
-      codes(r.issues),
-    ])
-  }
-  return withProvenance(header, body)
-}
-
 /**
  * Replace non-finite numbers with null, recursively.
  *
@@ -272,7 +240,6 @@ export interface SessionSnapshot {
   readonly plateText?: string
   readonly fit?: CurveFit | null
   readonly samples?: readonly SampleResult[]
-  readonly loading?: readonly LoadingRow[]
   readonly dilution?: DilutionPlan | null
   readonly dilutionFactor?: number
 }

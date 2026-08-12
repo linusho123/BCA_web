@@ -34,9 +34,9 @@ inferred from the code.
 
 **Issues are data, not exceptions.** No domain function throws across a stage boundary. Each
 returns its value paired with its complaints, and `src/state/stage.ts` tags them with the stage
-they came from — once, in one place. This is what lets a failed plate leave the loading panel
-rendered and reporting *why* rather than taking the page down or, worse, computing from stale
-numbers.
+they came from — once, in one place. This is what lets a failed dilution factor leave the curve
+panel rendered and reporting *why* rather than taking the page down or, worse, computing from
+stale numbers.
 
 The one deliberate exception is `predict()` in `domain/curve.ts`, which throws
 `CurveNotFittedError` on a curve with no coefficients. It is called only behind a `fit.fitted`

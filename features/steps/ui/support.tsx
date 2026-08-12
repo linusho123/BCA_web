@@ -140,8 +140,9 @@ export function reportedConcentrations(): Array<number | null> {
   return analysis.samples.value.value.map((r) => r.concUgPerML)
 }
 
-export function loadingVolumes(): Array<number | null> {
-  return analysis.loading.value.value.map((r) => r.proteinUL)
+/** What each sample's stock is reported to hold, which is the well reading with its dilution undone. */
+export function reportedStocks(): Array<number | null> {
+  return analysis.samples.value.value.map((r) => r.concUgPerUL)
 }
 
 /** The fitted coefficients, or null when nothing fitted. */

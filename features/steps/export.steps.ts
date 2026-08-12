@@ -7,17 +7,11 @@ import {
   type SessionSnapshot,
   curveToCsv,
   dilutionPlanToCsv,
-  loadingToCsv,
   provenanceHeader,
   samplesToCsv,
   sessionToJson,
 } from '~/domain/export'
-import {
-  type LoadingRow,
-  type SampleResult,
-  analyseSamples,
-  buildLoadingPlan,
-} from '~/domain/samples'
+import { type SampleResult, analyseSamples } from '~/domain/samples'
 import {
   REFERENCE_DILUTION_INPUT,
   REFERENCE_SAMPLES,
@@ -36,11 +30,10 @@ import { type World, expectAt, slot } from '../support/world'
  * writer's formatting, which is not what anyone downstream depends on.
  *
  * Each Given records which table the scenario is talking about, because the feature says "it is
- * exported as CSV" four times about four different tables and the sentence has to be registered
- * once.
+ * exported as CSV" about three different tables and the sentence has to be registered once.
  */
 
-type Subject = 'dilution' | 'curve' | 'samples' | 'loading'
+type Subject = 'dilution' | 'curve' | 'samples'
 
 /** A record from a CSV, split on the delimiters that were outside quotes. */
 type Record_ = string[]
@@ -170,13 +163,6 @@ Given(
   },
 )
 
-Given('a feasible loading plan', (world: World) => {
-  world.exportSubject = 'loading' satisfies Subject
-  const staged: SampleResult[] = analyse(world, [{ name: 'Lysate', replicates: [0.43] }])
-  world.results = staged
-  world.rows = buildLoadingPlan(staged, { desiredProteinUg: 10, finalVolumeUL: 30 })
-})
-
 Given('analysed samples carrying issues', (world: World) => {
   world.exportSubject = 'samples' satisfies Subject
   // Two different complaints rather than two of one, because the column is a list and a list of
@@ -212,7 +198,7 @@ Given(/^a sample named ([\s\S]+)$/, (world: World, name: string) => {
   world.results = analyse(world, [{ name, replicates: [0.43] }])
 })
 
-Given('a complete session with a plate, a curve, samples and a loading plan', (world: World) => {
+Given('a complete session with a plate, a curve and samples', (world: World) => {
   const fit = referenceFit()
   const analysed = analyseSamples(
     fit,
@@ -223,7 +209,6 @@ Given('a complete session with a plate, a curve, samples and a loading plan', (w
     plateText: referencePlateText(),
     fit,
     samples: analysed,
-    loading: buildLoadingPlan(analysed, { desiredProteinUg: 400, finalVolumeUL: 1000 }),
     dilution: planDilutions(REFERENCE_DILUTION_INPUT),
     dilutionFactor: 2,
   } satisfies SessionSnapshot
@@ -269,10 +254,6 @@ function exportCsv(world: World): void {
   const which = subject(world)
   if (which === 'dilution') {
     world.csv = dilutionPlanToCsv(slot<DilutionPlan>(world, 'plan'))
-  } else if (which === 'loading') {
-    // The rows are read before the fit, because building them is what puts a fit in the world.
-    const rows = slot<LoadingRow[]>(world, 'rows')
-    world.csv = loadingToCsv(rows, { fit: world.fit as CurveFit })
   } else if (which === 'samples') {
     const rows = results(world)
     world.csv = samplesToCsv(rows, { fit: world.fit as CurveFit, dilutionFactor: 1 })
@@ -412,10 +393,6 @@ Then('the parsed session holds the same values', (world: World) => {
     (parsed['samples'] as SampleResult[]).map((s) => [s.name, s.concUgPerML]),
     'the analysed samples',
   ).toEqual((original.samples ?? []).map((s) => [s.name, s.concUgPerML]))
-  expect(
-    (parsed['loading'] as LoadingRow[]).map((r) => [r.name, r.proteinUL]),
-    'the loading rows',
-  ).toEqual((original.loading ?? []).map((r) => [r.name, r.proteinUL]))
   expect(
     (parsed['dilution'] as DilutionPlan).vials.map((v) => v.vialId),
     'the dilution vials',

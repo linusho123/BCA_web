@@ -3,15 +3,11 @@ import { fitCurve, standardLevel } from './curve'
 import { IssueCode, Severity, hasCode } from './errors'
 import { isClose } from './linalg'
 import { referenceFit, referenceLevels, REFERENCE_SAMPLES } from './reference'
-import { analyseSamples, buildLoadingPlan, type SampleInput } from './samples'
+import { analyseSamples, type SampleInput } from './samples'
 
-/**
- * Proves features/samples/sample-back-calculation.feature and
- * features/samples/loading-plan.feature.
- */
+/** Proves features/samples/sample-back-calculation.feature. */
 
 const one = (name: string, absorbance: number): SampleInput => ({ name, replicates: [absorbance] })
-const codesOf = (issues: readonly { code: IssueCode }[]) => issues.map((i) => i.code)
 
 describe('the workbook samples', () => {
   it.each(REFERENCE_SAMPLES)('reproduces $name to 1e-9', (golden) => {
@@ -123,161 +119,5 @@ describe('sample guards', () => {
 
   it('returns nothing for no samples', () => {
     expect(analyseSamples(referenceFit(), [])).toEqual([])
-  })
-})
-
-// --- loading plan ----------------------------------------------------------
-
-const resultAt = (name: string, concUgPerUL: number | null) => ({
-  name,
-  replicates: [] as (number | null)[],
-  n: 0,
-  meanAbs: null,
-  sdAbs: null,
-  cvPercent: null,
-  concUgPerML: concUgPerUL === null ? null : concUgPerUL * 1000,
-  concUgPerUL,
-  dilutionFactor: 1,
-  extrapolated: false,
-  issues: [],
-})
-
-describe('the workbook loading table', () => {
-  it.each(REFERENCE_SAMPLES)('reproduces $name protein volume to 1e-9', (golden) => {
-    const [row] = buildLoadingPlan([resultAt(golden.name, golden.concUgPerUL)], {
-      desiredProteinUg: 400,
-      finalVolumeUL: 1000,
-    })
-    expect(isClose(row?.proteinUL as number, golden.proteinUL, 1e-9)).toBe(true)
-  })
-
-  it('sums a feasible lane to the final volume', () => {
-    const [row] = buildLoadingPlan([resultAt('Lysate', 2)], {
-      desiredProteinUg: 10,
-      finalVolumeUL: 30,
-    })
-    expect(row?.proteinUL).toBeCloseTo(5, 12)
-    expect(row?.diluentUL).toBeCloseTo(17.5, 12)
-    expect(row?.dyeUL).toBeCloseTo(7.5, 12)
-    expect((row?.proteinUL as number) + (row?.diluentUL as number) + (row?.dyeUL as number)).
-      toBeCloseTo(30, 12)
-    expect(row?.issues).toEqual([])
-  })
-
-  it.each([
-    { volume: 40, fraction: 0.25, dye: 10 },
-    { volume: 25, fraction: 0.2, dye: 5 },
-    { volume: 30, fraction: 0.25, dye: 7.5 },
-  ])('makes dye $dye uL of a $volume uL lane at $fraction', ({ volume, fraction, dye }) => {
-    const [row] = buildLoadingPlan([resultAt('Lysate', 2)], {
-      desiredProteinUg: 10,
-      finalVolumeUL: volume,
-      dyeFraction: fraction,
-    })
-    expect(row?.dyeUL).toBeCloseTo(dye, 12)
-  })
-
-  it('fills the whole lane with diluent when dye is off', () => {
-    const [row] = buildLoadingPlan([resultAt('Lysate', 2)], {
-      desiredProteinUg: 10,
-      finalVolumeUL: 30,
-      includeDye: false,
-    })
-    expect(row?.dyeUL).toBe(0)
-    expect(row?.diluentUL).toBeCloseTo(25, 12)
-  })
-
-  it('treats an exactly full lane as feasible with no diluent', () => {
-    const [row] = buildLoadingPlan([resultAt('Lysate', 2)], {
-      desiredProteinUg: 45,
-      finalVolumeUL: 30,
-    })
-    expect(row?.feasible).toBe(true)
-    expect(row?.proteinUL).toBeCloseTo(22.5, 12)
-    expect(row?.diluentUL).toBeCloseTo(0, 12)
-    expect(row?.issues).toEqual([])
-  })
-
-  it('preserves order and names', () => {
-    const names = ['delta', 'alpha', 'charlie', 'bravo']
-    const rows = buildLoadingPlan(
-      names.map((n) => resultAt(n, 2)),
-      { desiredProteinUg: 10, finalVolumeUL: 30 },
-    )
-    expect(rows.map((r) => r.name)).toEqual(names)
-  })
-})
-
-describe('the negative diluent defect', () => {
-  it('refuses the workbook lane and states the numbers that explain it', () => {
-    const [row] = buildLoadingPlan([resultAt('MCF7', 0.532863708973195)], {
-      desiredProteinUg: 400,
-      finalVolumeUL: 30,
-    })
-    expect(row?.feasible).toBe(false)
-    expect(hasCode(row?.issues ?? [], IssueCode.INSUFFICIENT_VOLUME)).toBe(true)
-    expect(row?.diluentUL).toBeNull()
-
-    const context = Object.fromEntries(
-      row?.issues.find((i) => i.code === IssueCode.INSUFFICIENT_VOLUME)?.context ?? [],
-    )
-    expect(context['requiredUL']).toBe('758.16')
-    expect(context['availableUL']).toBe('30.00')
-    // The actionable number survives: it is how far off the lane is.
-    expect(row?.proteinUL).toBeCloseTo(750.6609912894659, 9)
-  })
-
-  it('refuses the sheet’s literal blank final volume', () => {
-    const [row] = buildLoadingPlan([resultAt('MCF7', 0.532863708973195)], {
-      desiredProteinUg: 400,
-      finalVolumeUL: 0,
-    })
-    expect(codesOf(row?.issues ?? [])).toContain(IssueCode.NON_POSITIVE_VOLUME)
-    expect(row?.diluentUL).toBeNull()
-    expect(row?.feasible).toBe(false)
-  })
-})
-
-describe('loading guards', () => {
-  it.each([0, -0.5])('refuses a concentration of %s rather than dividing by it', (conc) => {
-    const [row] = buildLoadingPlan([resultAt('Odd', conc)], {
-      desiredProteinUg: 10,
-      finalVolumeUL: 30,
-    })
-    expect(codesOf(row?.issues ?? [])).toContain(IssueCode.ZERO_CONCENTRATION_DIVISION)
-    expect(row?.proteinUL).toBeNull()
-  })
-
-  it.each([
-    { mass: 0, volume: 30, fraction: 0.25, code: IssueCode.NON_POSITIVE_VOLUME },
-    { mass: -10, volume: 30, fraction: 0.25, code: IssueCode.NON_POSITIVE_VOLUME },
-    { mass: 10, volume: -5, fraction: 0.25, code: IssueCode.NON_POSITIVE_VOLUME },
-    { mass: 10, volume: 30, fraction: 1.5, code: IssueCode.DYE_FRACTION_INVALID },
-  ])('refuses mass $mass, volume $volume, dye $fraction', ({ mass, volume, fraction, code }) => {
-    const [row] = buildLoadingPlan([resultAt('Lysate', 2)], {
-      desiredProteinUg: mass,
-      finalVolumeUL: volume,
-      dyeFraction: fraction,
-    })
-    expect(codesOf(row?.issues ?? [])).toContain(code)
-  })
-
-  it('flags a protein volume below half a microlitre', () => {
-    const [row] = buildLoadingPlan([resultAt('Concentrated', 100)], {
-      desiredProteinUg: 10,
-      finalVolumeUL: 30,
-    })
-    expect(row?.proteinUL).toBeCloseTo(0.1, 12)
-    expect(codesOf(row?.issues ?? [])).toContain(IssueCode.PROTEIN_VOLUME_UNPIPETTABLE)
-  })
-
-  it('emits a row of absences for a sample with no concentration', () => {
-    const upstream = analyseSamples(referenceFit(), [{ name: 'Ghost', replicates: [null] }])
-    const [row] = buildLoadingPlan(upstream, { desiredProteinUg: 10, finalVolumeUL: 30 })
-    expect(row?.name).toBe('Ghost')
-    expect(row?.proteinUL).toBeNull()
-    expect(row?.diluentUL).toBeNull()
-    // The upstream reason travels with the row so the table explains itself.
-    expect(codesOf(row?.issues ?? [])).toContain(IssueCode.NO_DATA)
   })
 })

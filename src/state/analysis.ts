@@ -1,10 +1,10 @@
 /**
  * The analysis pipeline, as one chain of derived values.
  *
- * plate → mapping → curve → samples → loading, each stage reading the one before it. Written
- * with `computed` rather than by hand because features/analysis/analysis-workflow.feature makes
- * a claim in both directions: editing a well recomputes the curve and everything after it, and
- * changing the loading target recomputes nothing before it. A dependency graph gives both for
+ * plate → mapping → curve → samples, each stage reading the one before it. Written with
+ * `computed` rather than by hand because features/analysis/analysis-workflow.feature makes a
+ * claim in both directions: editing a well recomputes the curve and everything after it, and
+ * changing the dilution factor recomputes nothing before it. A dependency graph gives both for
  * free; a recalculate() function gives neither, and drifts the first time someone adds a stage.
  *
  * The inputs at the top are signals a person edits. Everything below them is derived, and
@@ -40,20 +40,8 @@ import {
   type PlateData,
 } from '~/domain/plate'
 import { curvePlot, type CurvePlot } from '~/domain/plot'
-import {
-  REFERENCE_DESIRED_PROTEIN_UG,
-  REFERENCE_DILUTION_FACTOR,
-  REFERENCE_FINAL_VOLUME_UL,
-  REFERENCE_SAMPLE_NAMES,
-  referencePlateText,
-} from '~/domain/reference'
-import {
-  analyseSamples,
-  buildLoadingPlan,
-  type LoadingRow,
-  type SampleInput,
-  type SampleResult,
-} from '~/domain/samples'
+import { REFERENCE_SAMPLE_NAMES, referencePlateText } from '~/domain/reference'
+import { analyseSamples, type SampleInput, type SampleResult } from '~/domain/samples'
 import type { StandardLevel } from '~/domain/curve'
 import {
   DEFAULT_SESSION,
@@ -89,10 +77,6 @@ export const sampleAssignments = signal<ReadonlyArray<readonly [string, string]>
 export const blankSubtract = signal(restored.blankSubtract)
 export const fitModel = signal<FitModel>(restored.fitModel)
 export const dilutionFactor = signal(restored.dilutionFactor)
-export const desiredProteinUg = signal(restored.desiredProteinUg)
-export const finalVolumeUL = signal(restored.finalVolumeUL)
-export const includeDye = signal(restored.includeDye)
-export const dyeFraction = signal(restored.dyeFraction)
 export const procedure = signal(restored.procedure)
 
 /**
@@ -210,19 +194,6 @@ export const samples = computed<Staged<readonly SampleResult[]>>(() => {
   return staged(Stage.SAMPLES, results, results.flatMap((r) => r.issues))
 })
 
-export const loading = computed<Staged<readonly LoadingRow[]>>(() => {
-  const results = samples.value.value
-  if (results.length === 0) return staged(Stage.LOADING, [], [])
-
-  const rows = buildLoadingPlan(results, {
-    desiredProteinUg: desiredProteinUg.value,
-    finalVolumeUL: finalVolumeUL.value,
-    includeDye: includeDye.value,
-    dyeFraction: dyeFraction.value,
-  })
-  return staged(Stage.LOADING, rows, rows.flatMap((r) => r.issues))
-})
-
 /** The chart's geometry. Derived, so the plot cannot disagree with the table beside it. */
 export const plot = computed<CurvePlot>(() =>
   curvePlot(curve.value.value, samples.value.value),
@@ -231,7 +202,7 @@ export const plot = computed<CurvePlot>(() =>
 /** Every complaint from every stage, in workflow order. */
 export const issues = computed<readonly StagedIssue[]>(() =>
   started.value
-    ? collect(plate.value, mapping.value, curve.value, samples.value, loading.value)
+    ? collect(plate.value, mapping.value, curve.value, samples.value)
     : [],
 )
 
@@ -439,29 +410,25 @@ export function applyDefaultLayout(names: readonly string[]): void {
 }
 
 /**
- * Load the workbook's own session: its plate, its layout, and the loading table it goes with.
+ * Load the workbook's own session: its plate and its layout, undiluted.
  *
- * The loading settings come along deliberately. They are not decoration on the example — the
- * workbook pairs 400 ug with a 1000 uL lane and no dye (its second loading table, rows 56 to
- * 80), and the three only work together. Against this app's ordinary 30 uL lane, 400 ug of
- * MCF7 is 750.7 uL of sample, so an example that brought the target without the volume would
- * open on two errors about a target it had set for itself.
+ * The dilution factor is assigned rather than left alone, and it is assigned 1 rather than the
+ * workbook's own 2. Both halves are deliberate.
  *
- * Leaving them to whatever the session already held has the same problem from the other side:
- * the example would compute or not depending on what the last visitor was doing, which is not
- * a property a demonstration is allowed to have.
+ * Assigned, because a demonstration that inherited whatever the last visitor set would report a
+ * different stock concentration each visit — see session-continuity.feature on how quietly a
+ * stale factor goes wrong.
  *
- * The dilution factor is part of the set for the same reason. The workbook read its unknowns at
- * 1 in 2, so at the app's default of 1 the same 400 ug asks for 1501 uL of MCF7 — over the lane
- * by half again, and no volume in the workbook would hold it.
+ * 1 rather than 2, because this field means an extra dilution the researcher did themselves and
+ * most plates have none. The assay's own 25 uL in 200 uL is already in the curve; the standards
+ * went through it too. The workbook read its unknowns at 1 in 2, and that reading is reproduced
+ * where it is the subject — sample-back-calculation.feature — rather than shipped as the
+ * default a person is shown on arrival and then carries into their own plate.
  */
 export function loadWorkedExample(): void {
   plateText.value = referencePlateText()
   applyDefaultLayout([...REFERENCE_SAMPLE_NAMES])
-  dilutionFactor.value = REFERENCE_DILUTION_FACTOR
-  desiredProteinUg.value = REFERENCE_DESIRED_PROTEIN_UG
-  finalVolumeUL.value = REFERENCE_FINAL_VOLUME_UL
-  includeDye.value = false
+  dilutionFactor.value = DEFAULT_SESSION.dilutionFactor
 }
 
 /**
@@ -524,10 +491,6 @@ export function snapshot(): StoredSession {
     blankSubtract: blankSubtract.value,
     fitModel: fitModel.value,
     dilutionFactor: dilutionFactor.value,
-    desiredProteinUg: desiredProteinUg.value,
-    finalVolumeUL: finalVolumeUL.value,
-    includeDye: includeDye.value,
-    dyeFraction: dyeFraction.value,
     procedure: procedure.value,
   }
 }
@@ -546,9 +509,5 @@ export function restore(session: StoredSession = DEFAULT_SESSION): void {
   blankSubtract.value = session.blankSubtract
   fitModel.value = session.fitModel
   dilutionFactor.value = session.dilutionFactor
-  desiredProteinUg.value = session.desiredProteinUg
-  finalVolumeUL.value = session.finalVolumeUL
-  includeDye.value = session.includeDye
-  dyeFraction.value = session.dyeFraction
   procedure.value = session.procedure
 }

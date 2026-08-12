@@ -41,10 +41,6 @@ export const StoredSessionSchema = z.object({
     FitModel.INVERSE_LINEAR,
   ]).default(FitModel.INVERSE_CUBIC),
   dilutionFactor: z.number().positive().finite().default(1),
-  desiredProteinUg: z.number().positive().finite().default(10),
-  finalVolumeUL: z.number().positive().finite().default(30),
-  includeDye: z.boolean().default(true),
-  dyeFraction: z.number().min(0).lt(1).default(0.25),
   procedure: z.enum([
     Procedure.MICROPLATE_STANDARD,
     Procedure.MICROPLATE_REDUCED_SAMPLE,

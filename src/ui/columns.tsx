@@ -1,5 +1,5 @@
 /**
- * Column definitions for the four tables this app shows.
+ * Column definitions for the tables this app shows.
  *
  * Kept apart from the pages because a cell formatter is a pure function of one row, and
  * separating them is what lets the formatting be unit tested without rendering a page. They
@@ -11,7 +11,7 @@
 
 import type { CurveFit, StandardLevel } from '~/domain/curve'
 import { fixed, grouped, percent, ratio } from '~/domain/format'
-import type { LoadingRow, SampleResult } from '~/domain/samples'
+import type { SampleResult } from '~/domain/samples'
 import type { VialPlan } from '~/domain/dilution'
 import type { Column } from './Table'
 
@@ -85,26 +85,6 @@ export const sampleColumns: ReadonlyArray<Column<SampleResult>> = [
         {codes([...r.issues])}
       </span>
     ),
-  },
-]
-
-export const loadingColumns: ReadonlyArray<Column<LoadingRow>> = [
-  { key: 'name', header: 'Sample', cell: (r) => r.name },
-  { key: 'protein', header: 'Protein', note: 'µL', align: 'right', cell: (r) => maybe(r.proteinUL, 2) },
-  { key: 'diluent', header: 'Diluent', note: 'µL', align: 'right', cell: (r) => maybe(r.diluentUL, 2) },
-  { key: 'dye', header: 'Dye', note: 'µL', align: 'right', cell: (r) => fixed(r.dyeUL, 2) },
-  { key: 'total', header: 'Final volume', note: 'µL', align: 'right', cell: (r) => fixed(r.finalVolumeUL, 2) },
-  {
-    key: 'feasible',
-    header: 'Loadable',
-    cell: (r) =>
-      r.feasible ? (
-        <span class="text-emerald-700">yes</span>
-      ) : (
-        <span class="text-red-700" title={codes([...r.issues])}>
-          no
-        </span>
-      ),
   },
 ]
 

@@ -85,31 +85,14 @@ export const REFERENCE_SAMPLES = [
     absorbance: 0.43,
     concUgPerML: 266.4318544865975,
     concUgPerUL: 0.532863708973195,
-    proteinUL: 750.6609912894659,
   },
   {
     name: 'RPMI8226',
     absorbance: 0.36,
     concUgPerML: 200.68839329745327,
     concUgPerUL: 0.40137678659490655,
-    proteinUL: 996.5698400084705,
   },
 ] as const
-
-/** The desired protein mass in the workbook's loading table. */
-export const REFERENCE_DESIRED_PROTEIN_UG = 400
-
-/**
- * The rest of the workbook's loading table: a 1000 uL lane, no dye, unknowns read at 1 in 2.
- *
- * These four numbers are one setting, not four. 400 ug of MCF7 at this dilution is 750.7 uL of
- * sample, which fits a 1000 uL lane and nothing smaller, and only with the 250 uL the dye would
- * otherwise take. Change one and the table stops balancing — which is exactly the arithmetic
- * the workbook got wrong at its cell K29, and the reason this app exists.
- *
- * From the second loading table of the RIPA sheet, rows 56 to 80.
- */
-export const REFERENCE_FINAL_VOLUME_UL = 1000
 
 /** The unknowns were read at a 1 in 2 dilution; the concentrations above already include it. */
 export const REFERENCE_DILUTION_FACTOR = 2

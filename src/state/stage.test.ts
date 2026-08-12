@@ -65,13 +65,13 @@ describe('collect', () => {
 
   it('does not reorder across stages, so an early warning still precedes a late error', () => {
     // Stage order is the workflow order, and the workflow order is what a reader is scanning.
-    // Sorting globally by severity would put a loading error above the plate warning that
+    // Sorting globally by severity would put a samples error above the plate warning that
     // caused it.
     const all = collect(
       staged(Stage.PLATE, null, [anIssue(Severity.WARN)]),
-      staged(Stage.LOADING, null, [anIssue(Severity.ERROR)]),
+      staged(Stage.SAMPLES, null, [anIssue(Severity.ERROR)]),
     )
-    expect(all.map((i) => i.stage)).toEqual([Stage.PLATE, Stage.LOADING])
+    expect(all.map((i) => i.stage)).toEqual([Stage.PLATE, Stage.SAMPLES])
   })
 
   it('is empty when no stage complained', () => {

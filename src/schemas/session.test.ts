@@ -82,11 +82,7 @@ describe('the stored session shape', () => {
   it.each([
     ['dilutionFactor', 0],
     ['dilutionFactor', -2],
-    ['desiredProteinUg', 0],
-    ['finalVolumeUL', -1],
-    ['dyeFraction', 1],
-    ['dyeFraction', -0.1],
-  ])('refuses %s of %d, which no lane could be built from', (field, bad) => {
+  ])('refuses %s of %d, which nothing could be scaled by', (field, bad) => {
     expect(StoredSessionSchema.safeParse(session({ [field]: bad })).success).toBe(false)
   })
 
@@ -193,7 +189,7 @@ describe('reading back what may not be a session', () => {
 
   it('discards a stored session with a field outside its range', () => {
     const storage = new FakeStorage()
-    storage.setItem(STORAGE_KEY, JSON.stringify(session({ dyeFraction: 2 })))
+    storage.setItem(STORAGE_KEY, JSON.stringify(session({ dilutionFactor: -1 })))
     expect(loadSession(storage)).toEqual(DEFAULT_SESSION)
   })
 

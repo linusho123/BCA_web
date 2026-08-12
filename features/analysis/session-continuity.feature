@@ -25,17 +25,19 @@ Feature: Returning to a session
   Background:
     Given the analysis page with the workbook's plate loaded
 
-  # AC4 — the worked example carries loading settings so that it computes end to end, and one
-  # of them is a dilution factor of 2, which is the workbook's own 1 in 2 on its unknowns. That
-  # is right for the workbook and wrong for the next plate: the assay's own 25 uL of sample in
-  # 200 uL of reagent applies to the standards as well, so it is already in the curve, and this
-  # field means only an extra dilution the researcher did themselves. Undiluted is 1. Leaving
-  # somebody else's 2 behind would understate every later result by half, and look fine.
-  Scenario: Starting over clears the settings the worked example brought with it
+  # AC4 — a dilution factor is the setting most worth clearing, because it is the one that is
+  # wrong silently. It scales the stock column and touches nothing else on screen, so a 8 left
+  # behind from the last plate divides the next researcher's results by eight and produces a
+  # page that looks exactly as correct as it would have anyway.
+  #
+  # The factor is set by hand here rather than inherited from the worked example, which now
+  # opens at 1 like everything else — asserting that starting over reaches the value it already
+  # held would be a scenario that passes whether or not anything is cleared.
+  Scenario: Starting over clears a setting left behind from the last plate
     Given the worked example loaded
+    And a dilution factor of 8 left over from the last plate
     When the session is started over
     Then the dilution factor is 1
-    And the loading target is 10 ug in 30 uL
 
   # AC1 — the session survives a reload, because a browser tab is not a safe place to think
   Scenario: The layout and settings are restored after a reload

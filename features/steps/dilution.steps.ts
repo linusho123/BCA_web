@@ -9,7 +9,6 @@ import {
   dilutionInput,
   planDilutions,
 } from '~/domain/dilution'
-import type { Issue } from '~/domain/errors'
 import { ratio } from '~/domain/format'
 import { REFERENCE_DILUTION_INPUT } from '~/domain/reference'
 import {
@@ -298,10 +297,8 @@ Then('the vial concentrations are {} ug\\/mL', (world: World, list: string) => {
   expect(plan(world).vials.map((v) => v.finalConcUgPerML)).toEqual(numberList(list))
 })
 
-/** Shared with the loading plan; see the note on `the plan is flagged`. */
 Then('the plan reports no issues', (world: World) => {
-  const loading = world.rows as ReadonlyArray<{ issues: readonly Issue[] }> | undefined
-  expectNoIssues(loading === undefined ? issues(world) : loading.flatMap((r) => r.issues))
+  expectNoIssues(issues(world))
 })
 
 Then('the plan reports no issues at error severity', (world: World) => {
@@ -312,22 +309,12 @@ Then('the plan reports issues at error severity', (world: World) => {
   expect(issues(world).filter((i) => i.severity === 'error').length).toBeGreaterThan(0)
 })
 
-/**
- * Shared with the loading plan, which says the same sentence about a different plan.
- *
- * The step registry is global, so this can only be registered once, and it resolves by looking
- * at which plan the scenario actually built rather than by owning the phrase — a loading feature
- * that had to say "the loading plan is flagged" to avoid a collision in a file it never mentions
- * would be a feature written around the test harness.
- */
 Then('the plan is flagged {string} at {} severity', (
   world: World,
   code: string,
   level: string,
 ) => {
-  const loading = world.rows as ReadonlyArray<{ issues: readonly Issue[] }> | undefined
-  const raised = loading === undefined ? issues(world) : loading.flatMap((r) => r.issues)
-  expectIssue(raised, code, level)
+  expectIssue(issues(world), code, level)
 })
 
 Then('vial {string} is flagged {string} at {} severity', (

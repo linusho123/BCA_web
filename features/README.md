@@ -16,12 +16,12 @@ directory; a scenario that cannot pass yet does not get written as a scenario.
 | `component` | Chromium | one rendered component |
 | `acceptance:ui` | Chromium | the whole page, focus and all |
 
-The split is in `vite.config.ts`, not in how the features are written. Sixteen of the twenty-two
-are claims about the assay and run in node in milliseconds. Three are claims about a rendered
+The split is in `vite.config.ts`, not in how the features are written. Fifteen of the twenty-two
+are claims about the assay and run in node in milliseconds. Seven are claims about a rendered
 page — that focus reaches what hover reaches, that a failed stage leaves its neighbours drawn,
-that a restored session asks for a plate rather than listing what is missing — and those cannot
-be checked without a browser, so they run in one. A scenario can move between the
-two without being rewritten.
+that a restored session asks for a plate rather than listing what is missing, that a pointer on a
+crowded mark reads back that mark — and those cannot be checked without a browser, so they run in
+one. A scenario can move between the two without being rewritten.
 
 ## The map
 
@@ -31,24 +31,24 @@ two without being rewritten.
 | `curve-fitting/polynomial-least-squares.feature` | 9 | `domain/linalg` | F01 |
 | `curve-fitting/standard-curve.feature` | 11 | `domain/curve` | F05 |
 | `curve-fitting/curve-quality-guards.feature` | 11 | `domain/curve`, negative half | F05 |
-| `dilution/serial-dilution-plan.feature` | 11 | `domain/dilution` | F02 |
+| `dilution/serial-dilution-plan.feature` | 12 | `domain/dilution` | F02 |
 | `dilution/dilution-series-validation.feature` | 7 | `domain/dilution`, negative half | F02 |
 | `plate/plate-reader-paste.feature` | 12 | `domain/plate` | F03 |
 | `plate/plate-file-import.feature` | 10 | `schemas/upload`, `domain/plate` | F11 |
 | `plate/well-region-mapping.feature` | 12 | `domain/layout` | F11 |
-| `plate/default-plate-layout.feature` | 11 | `domain/layout` | F11 |
+| `plate/default-plate-layout.feature` | 12 | `domain/layout` | F11 |
 | `qc/replicate-statistics.feature` | 10 | `domain/qc` | F04 |
 | `samples/sample-back-calculation.feature` | 12 | `domain/samples` | F06 |
-| `samples/loading-plan.feature` | 12 | `domain/samples` | F07 |
 | `reagent/working-reagent.feature` | 10 | `domain/reagent` | F08 |
-| `export/result-export.feature` | 12 | `domain/export` | F09 |
+| `export/result-export.feature` | 11 | `domain/export` | F09 |
 | `analysis/curve-plot-geometry.feature` | 12 | `domain/plot` | F12, geometry half |
 | **`analysis/analysis-workflow.feature`** | 12 | the page, the pipeline, the promises | replaces F10 |
 | **`analysis/session-continuity.feature`** | 4 | the page before a plate is in it | replaces F10 |
 | **`analysis/curve-plot-presentation.feature`** | 12 | the rendered chart | F12, presentation half |
+| **`analysis/curve-plot-crowding.feature`** | 2 | which mark the pointer is asking about | split from presentation |
 | **`analysis/plate-grid.feature`** | 9 | the 96 wells, typed into | scoped 2026-08-11 |
-| **`analysis/plate-layout-painting.feature`** | 10 | which wells hold which sample | scoped 2026-08-11 |
-| **`analysis/plate-grid-from-file.feature`** | 10 | reading a plate out of a file | scoped 2026-08-11 |
+| **`analysis/plate-layout-painting.feature`** | 11 | which wells hold which sample | scoped 2026-08-11 |
+| **`analysis/plate-grid-from-file.feature`** | 12 | reading a plate out of a file | scoped 2026-08-11 |
 
 Bold runs in a browser. "Ported from" is the `BCA_quarto/features/F**.feature.md` file; each
 feature repeats its own provenance in a header comment, including which section of the spec

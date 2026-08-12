@@ -1,4 +1,4 @@
-# Scoped 2026-08-11. Not yet implemented — see spec/OUT-OF-SCOPE.md.
+# Scoped 2026-08-11 with /scope; fence in spec/OUT-OF-SCOPE.md.
 #
 # These files live in spec/ rather than features/ on purpose. vite.config.ts globs
 # features/**/*.feature into the acceptance project, so a scenario landing there runs

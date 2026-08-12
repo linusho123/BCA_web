@@ -1,8 +1,7 @@
 # BCA_web
 
-Pierce BCA protein assay: plan the dilution series, fit the standard curve, back-calculate the
-unknowns, and get SDS-PAGE loading volumes. A port of `BCA_quarto` from Quarto + Shinylive to a
-Preact app.
+Pierce BCA protein assay: plan the dilution series, fit the standard curve, and back-calculate the
+unknowns. A port of `BCA_quarto` from Quarto + Shinylive to a Preact app.
 
 **Every calculation runs in the browser.** No absorbance leaves the machine it was pasted into.
 There is no server, no request, and no analytics — and that is not a claim in a README, it is a
@@ -107,10 +106,10 @@ and read everywhere.
 **Dilutions** — the BSA serial dilution plan, from the 2 mg/mL ampule down. Three presets,
 including the two tables from the Pierce manual and the lab's own serial series.
 
-**Analysis** — paste the reader's grid, name the unknowns, and read off the curve, the
-concentrations and the loading volumes. Every stage recomputes from the one before it. Correcting
-a single well re-fits the curve and everything downstream; changing the loading target recomputes
-the loading table and touches nothing above it.
+**Analysis** — paste the reader's grid, name the unknowns, and read off the curve and the
+concentrations. Every stage recomputes from the one before it. Correcting a single well re-fits
+the curve and everything downstream; changing the dilution factor rescales the stock column and
+touches nothing above it.
 
 Exports are CSV and JSON, built as a Blob and downloaded by the browser — the same promise as
 above, restated as a refusal.
@@ -131,7 +130,7 @@ since. Each one names its origin in a header comment; `features/README.md` maps 
 ```
 src/domain/    the assay. Pure functions, no I/O, no framework. 100% covered.
 src/schemas/   Zod at every boundary — paste, file, localStorage.
-src/state/     signals and the derived pipeline: plate → mapping → curve → samples → loading
+src/state/     signals and the derived pipeline: plate → mapping → curve → samples
 src/ui/        Preact components. The only layer that renders anything.
 features/      the specification (see features/README.md)
 ```
@@ -158,12 +157,12 @@ screen reader, or with reduced motion set loses nothing but convenience.
 
 | Project | Where | Tests |
 |---|---|---|
-| `unit` | node | 528 |
-| `acceptance` | node | 232 scenarios, 16 features |
+| `unit` | node | 503 |
+| `acceptance` | node | 213 scenarios, 15 features |
 | `component` | Chromium | 9 |
-| `acceptance:ui` | Chromium | 71 scenarios, 6 features |
+| `acceptance:ui` | Chromium | 76 scenarios, 7 features |
 
-840 in total, all passing, no skips and no `@todo` tags.
+801 in total, all passing, no skips and no `@todo` tags.
 
 The workflow is spec-first: a `.feature` file exists before the code that satisfies it, and every
 feature carries negative scenarios as well as happy paths. See `AGENTS.md` before changing

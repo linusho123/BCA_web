@@ -1,4 +1,4 @@
-# Scoped 2026-08-11. Not yet implemented — see spec/OUT-OF-SCOPE.md.
+# Scoped 2026-08-11 with /scope; fence in spec/OUT-OF-SCOPE.md.
 #
 # Replaces the "Sample names" text field as the way a layout is expressed. The regions the
 # domain already speaks — "A1:A9", "C1,C2,C5" — are unchanged: parseRegion already accepts a

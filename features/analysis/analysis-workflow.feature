@@ -13,7 +13,7 @@
 @analysis
 Feature: Carrying a plate through the analysis workflow
 
-  As a researcher working through a plate from paste to loading volumes
+  As a researcher working through a plate from paste to reported concentrations
   I want each stage to recompute from the one before it and say when it cannot
   So that I can correct a mistake at the stage that made it, without starting again
 
@@ -41,16 +41,21 @@ Feature: Carrying a plate through the analysis workflow
 
   # AC7 — the button is the first thing most people press, so it is the app's first impression.
   #
-  # It carries the loading settings with it rather than inheriting whatever was left in the
-  # session. The workbook pairs 400 ug with a 1000 uL lane and no dye — its second loading
-  # table, rows 56 to 80 — and those three go together: 400 ug into the app's ordinary 30 uL
-  # lane needs 750.7 uL of sample, so the example would open on two errors about a target it
-  # set for itself. A demonstration that cannot run is not a demonstration.
+  # It opens at a dilution factor of 1, and sets it rather than inheriting whatever the session
+  # was left holding: a demonstration that reported a different number depending on who used
+  # the laptop last is not a demonstration.
+  #
+  # 1 is the honest default for the bench here even though the workbook read its own unknowns
+  # at 1 in 2. The assay's own 25 uL of sample in 200 uL of reagent is in the curve already —
+  # the standards went through it too — so this field means only an extra dilution a researcher
+  # did themselves, and most plates have none. The example's well concentrations are the
+  # workbook's to 1e-9 either way; the factor scales only the stock column after them, and the
+  # workbook's own 2 is reproduced where it belongs, in sample-back-calculation.feature.
   Scenario: The worked example loads a session that computes without complaint
     Given a session with no plate loaded
     When the worked example is loaded
-    Then both samples report a loading volume
-    And every lane in the loading plan is loadable
+    Then both samples report a concentration
+    And the page reports the dilution factor as 1
     And the issue panel reports nothing at error severity
 
   # AC8 — the model is one of the three switches that change every reported number, so it
@@ -65,11 +70,10 @@ Feature: Carrying a plate through the analysis workflow
     And the page reports the fit model as "Quadratic"
 
   # AC6 — the shape of the ordinary session, end to end
-  Scenario: A pasted plate carries through to loading volumes without retyping
+  Scenario: A pasted plate carries through to reported concentrations without retyping
     When the default layout is applied with the names "MCF7" and "RPMI8226"
     Then the curve is fitted from the standards on the plate
     And both samples report a concentration
-    And both samples report a loading volume
 
   # AC3 — the reactive contract, in the direction it runs
   Scenario: Correcting one well recomputes the curve and everything after it
@@ -78,13 +82,17 @@ Feature: Carrying a plate through the analysis workflow
     Then the curve coefficients change
     And both samples' concentrations change
 
-  # AC3 — and the direction it does not run
-  Scenario: Changing the loading target leaves the curve and the concentrations alone
+  # AC3 — and the direction it does not run.
+  #
+  # The dilution factor is the last knob in the chain: it undoes a dilution the researcher did
+  # before the plate was read, so it scales what a sample's absorbance says its stock held
+  # without touching the standards the curve was fitted from.
+  Scenario: Changing the dilution factor leaves the curve alone and rescales the stock
     Given the default layout applied with the names "MCF7" and "RPMI8226"
-    When the loading target is changed to 20 ug in 30 uL
+    When the dilution factor is changed to 4
     Then the curve coefficients are unchanged
-    And both samples' concentrations are unchanged
-    And both samples' loading volumes change
+    And both samples' well concentrations are unchanged
+    And both samples' stock concentrations change
 
   # AC3 — the switch that changes the numbers
   Scenario: Turning blank subtraction off reproduces the legacy workbook exactly
@@ -123,14 +131,18 @@ Feature: Carrying a plate through the analysis workflow
     Then the curve is flagged "SINGULAR_DESIGN" at error severity
     And both samples are flagged "CURVE_UNAVAILABLE" at error severity
 
-  # AC2 — the property every panel depends on
+  # AC2 — the property every panel depends on.
+  #
+  # Staged through the dilution factor because it is the one input the samples stage owns
+  # outright: a factor of zero is a division the stage refuses, and the curve above it never
+  # saw the number at all, so a page that survives this is a page whose panels are independent.
   @negative
   Scenario: A stage that fails degrades its own panel and leaves the others rendered
     Given the default layout applied with the names "MCF7" and "RPMI8226"
-    When the loading target is set to 0 uL
-    Then the loading panel reports an issue at error severity
+    When the dilution factor is set to 0
+    Then the samples panel reports an issue at error severity
+    And the samples panel is still rendered
     And the curve panel still shows its coefficients
-    And the samples panel still shows its concentrations
 
   # AC1 — restated as a refusal, because it is a promise made to the person pasting
   @negative

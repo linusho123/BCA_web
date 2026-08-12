@@ -52,7 +52,6 @@ export const BLANK_ABSORBANCE_WARN = 0.2
 
 /** Smallest volume a P2 delivers reliably. Below this, warn rather than pretend. */
 export const MIN_PIPETTABLE_UL = 1.0
-export const MIN_PROTEIN_PIPETTABLE_UL = 0.5
 
 /** The lab workbook's 2.1x excess on every source draw (specdoc §3.1). */
 export const DEFAULT_OVERAGE_FACTOR = 2.1

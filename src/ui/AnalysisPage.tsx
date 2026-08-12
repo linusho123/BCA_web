@@ -1,10 +1,10 @@
 /**
- * The analysis page: plate in, loading volumes out.
+ * The analysis page: plate in, concentrations out.
  *
  * Every panel reads a derived signal and nothing else. There is no recalculate button and no
  * effect that recomputes on change, because features/analysis/analysis-workflow.feature makes
  * the reactive claim in both directions — editing a well changes the curve and everything
- * after it, changing the loading target changes nothing before it — and a dependency graph is
+ * after it, changing the dilution factor changes nothing before it — and a dependency graph is
  * the only way to get both without keeping them true by hand.
  *
  * Each panel renders whatever its stage produced, including nothing. A failed stage leaves its
@@ -17,14 +17,14 @@ import { batch, useSignal } from '@preact/signals'
 import { Download } from 'lucide-preact'
 import { FitModel, modelLabel } from '~/domain/constants'
 import { num } from '~/domain/format'
-import { curveToCsv, loadingToCsv, samplesToCsv, sessionToJson } from '~/domain/export'
+import { curveToCsv, samplesToCsv, sessionToJson } from '~/domain/export'
 import * as analysis from '~/state/analysis'
 import { CurveChart } from './chart/CurveChart'
 import { IssuePanel } from './IssuePanel'
 import { PlateGrid } from './PlateGrid'
 import { PlateImport } from './PlateImport'
 import { Table } from './Table'
-import { loadingColumns, sampleColumns, standardColumns } from './columns'
+import { sampleColumns, standardColumns } from './columns'
 import { download } from './download'
 import { NumberField, Select, TextField, Toggle } from './fields'
 
@@ -48,15 +48,10 @@ export function AnalysisPage() {
     analysis.blankSubtract.value,
     analysis.fitModel.value,
     analysis.dilutionFactor.value,
-    analysis.desiredProteinUg.value,
-    analysis.finalVolumeUL.value,
-    analysis.includeDye.value,
-    analysis.dyeFraction.value,
   ])
 
   const fit = analysis.curve.value.value
   const samples = analysis.samples.value.value
-  const loading = analysis.loading.value.value
   const started = analysis.started.value
 
   const provenance = {
@@ -154,6 +149,7 @@ export function AnalysisPage() {
 
             <NumberField
               label="Dilution factor"
+              testId="dilution-factor"
               value={analysis.dilutionFactor.value}
               onChange={(v) => (analysis.dilutionFactor.value = v)}
               hint="Extra dilution you did to the sample yourself. 1 if none. The assay's own
@@ -174,49 +170,6 @@ export function AnalysisPage() {
               filename="bca-samples.csv"
               build={() => samplesToCsv(samples, provenance)}
             />
-          </section>
-
-          <section
-            aria-labelledby="loading-heading"
-            data-testid="loading-panel"
-            class="space-y-4"
-          >
-            <h2 id="loading-heading" class="text-base font-semibold text-slate-900">
-              SDS-PAGE loading
-            </h2>
-
-            <div class="flex flex-wrap gap-4">
-              <NumberField
-                label="Protein per lane (µg)"
-                value={analysis.desiredProteinUg.value}
-                onChange={(v) => (analysis.desiredProteinUg.value = v)}
-              />
-              <NumberField
-                label="Final volume (µL)"
-                value={analysis.finalVolumeUL.value}
-                onChange={(v) => (analysis.finalVolumeUL.value = v)}
-              />
-              <Toggle
-                label="Include loading dye"
-                checked={analysis.includeDye.value}
-                onChange={(v) => (analysis.includeDye.value = v)}
-              />
-            </div>
-
-            <Table
-              testId="loading-table"
-              caption="Loading volumes"
-              columns={loadingColumns}
-              rows={[...loading]}
-              rowKey={(r) => r.name}
-              empty="Loading volumes appear once the samples have concentrations."
-            />
-
-            <ExportButton
-              label="Export the loading plan"
-              filename="bca-loading.csv"
-              build={() => loadingToCsv(loading, provenance)}
-            />
             <ExportButton
               label="Export the whole session"
               filename="bca-session.json"
@@ -225,7 +178,6 @@ export function AnalysisPage() {
                 sessionToJson({
                   fit,
                   samples,
-                  loading,
                   dilutionFactor: analysis.dilutionFactor.value,
                 })
               }

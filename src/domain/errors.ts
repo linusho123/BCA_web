@@ -80,7 +80,7 @@ export const IssueCode = {
   HIGH_BLANK: 'HIGH_BLANK',
   LEVEL_DROPPED: 'LEVEL_DROPPED',
 
-  // -- §3.5 / §6.5 replicate QC, samples and loading -----------------------
+  // -- §3.5 replicate QC and samples ---------------------------------------
   NO_DATA: 'NO_DATA',
   SINGLE_REPLICATE: 'SINGLE_REPLICATE',
   CV_WARN: 'CV_WARN',
@@ -88,9 +88,6 @@ export const IssueCode = {
   EXTRAPOLATED: 'EXTRAPOLATED',
   BELOW_BLANK: 'BELOW_BLANK',
   NEGATIVE_CONCENTRATION_RESULT: 'NEGATIVE_CONCENTRATION_RESULT',
-  INSUFFICIENT_VOLUME: 'INSUFFICIENT_VOLUME',
-  PROTEIN_VOLUME_UNPIPETTABLE: 'PROTEIN_VOLUME_UNPIPETTABLE',
-  ZERO_CONCENTRATION_DIVISION: 'ZERO_CONCENTRATION_DIVISION',
   DILUTION_FACTOR_INVALID: 'DILUTION_FACTOR_INVALID',
   CURVE_UNAVAILABLE: 'CURVE_UNAVAILABLE',
 
@@ -99,7 +96,6 @@ export const IssueCode = {
   NEGATIVE_COUNT: 'NEGATIVE_COUNT',
   EXCESS_BELOW_ONE: 'EXCESS_BELOW_ONE',
   PLATE_OVERFLOW: 'PLATE_OVERFLOW',
-  DYE_FRACTION_INVALID: 'DYE_FRACTION_INVALID',
 } as const
 
 export type IssueCode = (typeof IssueCode)[keyof typeof IssueCode]
@@ -111,7 +107,6 @@ export const Stage = {
   MAPPING: 'mapping',
   CURVE: 'curve',
   SAMPLES: 'samples',
-  LOADING: 'loading',
   REAGENT: 'reagent',
 } as const
 

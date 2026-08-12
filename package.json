@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Pierce BCA Protein Assay planner, standard curve and loading calculator \u2014 runs entirely in the browser.",
+  "description": "Pierce BCA Protein Assay planner, standard curve and unknown calculator \u2014 runs entirely in the browser.",
   "engines": {
     "node": ">=22.12.0"
   },
