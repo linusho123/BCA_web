@@ -1,4 +1,9 @@
-# Scoped 2026-08-11. Not yet implemented — see spec/OUT-OF-SCOPE.md.
+# Scoped 2026-08-11 with /scope; fence in spec/OUT-OF-SCOPE.md.
+#
+# Named plate-grid-from-file rather than plate-file-import so as not to collide with
+# features/plate/plate-file-import.feature, which is a different job: that one turns a file's
+# bytes into text, handling BOMs, cp1252 and binary uploads. This one takes text that has
+# already been decoded and finds the grid inside it.
 #
 # parsePlateCsv, decodePlateBytes and UploadSchema already exist and are referenced by nothing
 # outside src/domain and src/schemas — verified by grep over src/ui and src/state, zero hits.

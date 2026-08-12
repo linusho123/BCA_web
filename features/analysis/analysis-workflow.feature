@@ -18,7 +18,7 @@ Feature: Carrying a plate through the analysis workflow
   So that I can correct a mistake at the stage that made it, without starting again
 
   Acceptance criteria:
-    AC1  The whole calculation runs in the browser; no assay data is sent anywhere.
+    AC1  The whole calculation runs in the browser; no assay data is sent or kept past the tab.
     AC2  Every stage returns its value together with its issues, never throwing across stages.
     AC3  Editing a stage recomputes the stages after it and nothing before it.
     AC4  A stage whose input failed reports that, rather than computing from stale values.
@@ -28,6 +28,12 @@ Feature: Carrying a plate through the analysis workflow
 
   What a session looks like before a plate is in it — the empty page, and the one restored from
   a previous visit — is in session-continuity.feature.
+
+  AC1 is about the network and about storage that outlives the tab, which are not the same
+  promise. The plate itself is held for the tab so that a reload does not cost someone ninety-six
+  hand-typed wells; it dies when the tab closes, and nothing an instrument produced is written
+  where tomorrow's user of a shared laptop would find it. That half is specified, with both
+  halves asserted, in plate-grid.feature.
 
   Background:
     Given the analysis page with the workbook's plate loaded
@@ -79,7 +85,7 @@ Feature: Carrying a plate through the analysis workflow
   Scenario: Running an analysis sends nothing over the network
     When the default layout is applied with the names "MCF7" and "RPMI8226"
     Then no network request is made
-    And no assay value is written to persistent storage
+    And no assay value is written to storage that outlives the tab
 
   # AC5
   Scenario: Issues are grouped by severity and name the stage that raised them

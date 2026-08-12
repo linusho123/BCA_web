@@ -420,7 +420,7 @@ describe('writeWell', () => {
   })
 })
 
-/** Proves features/analysis/plate-file-import.feature. */
+/** Proves features/analysis/plate-grid-from-file.feature. */
 describe('findGrid', () => {
   const row = (n: number, base: number) =>
     Array.from({ length: n }, (_, i) => (base + i * 0.1).toFixed(3)).join(',')

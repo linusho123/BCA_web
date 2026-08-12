@@ -1,6 +1,6 @@
 # The specification
 
-These 19 feature files are the specification. Not a description of the code — the thing the code
+These 22 feature files are the specification. Not a description of the code — the thing the code
 is written to satisfy, and the reason to believe it still does. If a claim about this app is not
 in here, nothing is checking it.
 
@@ -46,10 +46,15 @@ two without being rewritten.
 | **`analysis/analysis-workflow.feature`** | 11 | the page, the pipeline, the promises | replaces F10 |
 | **`analysis/session-continuity.feature`** | 3 | the page before a plate is in it | replaces F10 |
 | **`analysis/curve-plot-presentation.feature`** | 12 | the rendered chart | F12, presentation half |
+| **`analysis/plate-grid.feature`** | 9 | the 96 wells, typed into | scoped 2026-08-11 |
+| **`analysis/plate-layout-painting.feature`** | 10 | which wells hold which sample | scoped 2026-08-11 |
+| **`analysis/plate-grid-from-file.feature`** | 10 | reading a plate out of a file | scoped 2026-08-11 |
 
 Bold runs in a browser. "Ported from" is the `BCA_quarto/features/F**.feature.md` file; each
 feature repeats its own provenance in a header comment, including which section of the spec
-document it came from.
+document it came from. The last three came from a `/scope` interview rather than from the
+Quarto project, and their scope fence — what was deliberately left out, and which rejected
+options were considered — is in `spec/OUT-OF-SCOPE.md`.
 
 F10 is the one that did not survive. It specified a Quarto site with Shinylive blocks: a purity
 constraint so the core could run under Pyodide, a generator that inlined it into each `.qmd`, and

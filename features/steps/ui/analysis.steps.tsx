@@ -356,7 +356,12 @@ Then('no network request is made', (world: World) => {
  * Checked against the values written rather than against the key list, because the layout is meant
  * to persist and does. The claim is about what is *inside* what persisted.
  */
-Then('no assay value is written to persistent storage', (world: World) => {
+Then('no assay value is written to storage that outlives the tab', (world: World) => {
+  // "outlives the tab" rather than "persistent", which this step used to say. The watcher below
+  // wraps localStorage, and localStorage is exactly the store that survives a tab closing. Since
+  // the plate began being held in sessionStorage, the old wording read as a promise that nothing
+  // is stored anywhere — narrower in fact than it sounded, and the kind of gap that lets a
+  // reader trust a guarantee the app no longer makes.
   const watch = world.storage as StorageWatch | undefined
   expect(watch, 'the storage watch was never installed').toBeDefined()
 

@@ -17,7 +17,7 @@ const UI_FEATURES = [
   'features/analysis/curve-plot-presentation.feature',
   'features/analysis/plate-grid.feature',
   'features/analysis/plate-layout-painting.feature',
-  'features/analysis/plate-file-import.feature',
+  'features/analysis/plate-grid-from-file.feature',
 ] as const
 
 export default defineConfig({

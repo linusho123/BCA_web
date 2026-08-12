@@ -1,7 +1,7 @@
 /**
  * Reading a plate out of a file the instrument wrote.
  *
- * Proves features/analysis/plate-file-import.feature.
+ * Proves features/analysis/plate-grid-from-file.feature.
  *
  * Two surfaces, and the second is the one that matters. An import that lands says what it read
  * and what it stepped over, because an automatic import nobody can check is a guess with better

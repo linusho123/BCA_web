@@ -1,5 +1,5 @@
 /**
- * Steps for features/analysis/plate-file-import.feature.
+ * Steps for features/analysis/plate-grid-from-file.feature.
  *
  * Files are handed to the state action as decoded text rather than driven through the file
  * input. A browser will not let a test put a real file on an `<input type="file">` without a
