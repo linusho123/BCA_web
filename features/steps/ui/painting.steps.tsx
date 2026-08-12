@@ -91,6 +91,11 @@ When('wells {string} are painted as {string}', async (
   _w: unknown, region: string, name: string,
 ) => {
   selectPaint(`sample-${name}`)
+  // The settle here is load-bearing, not politeness. Arming the palette is a signal write, and
+  // the wells' click handlers are closures created at render: without a render in between, they
+  // still hold the previous value of `armed` and every click below is ignored. This step failed
+  // exactly that way, and looked for all the world like painting being broken.
+  await settle()
   for (const well of wellsIn(region)) one(`well-${well}`).click()
   await settle()
 })

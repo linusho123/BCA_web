@@ -10,6 +10,7 @@ import {
   parsePlateCsv,
   wellValue,
   writeWell,
+  findGrid,
   EMPTY_WELL_TOKEN,
 } from './plate'
 import { REFERENCE_ABSORBANCES, referencePlateText } from './reference'
@@ -412,4 +413,91 @@ describe('writeWell', () => {
     expect(writeWell('kept', 'A13', '1')).toBe('kept')
     expect(writeWell('kept', 'A0', '1')).toBe('kept')
   })
+})
+
+/** Proves features/analysis/plate-file-import.feature. */
+describe('findGrid', () => {
+  const row = (n: number, base: number) =>
+    Array.from({ length: n }, (_, i) => (base + i * 0.1).toFixed(3)).join(',')
+  const grid = (rows: number, cols: number) =>
+    Array.from({ length: rows }, (_, r) => row(cols, 0.1 * r)).join('\n')
+  const columnHeader = ',' + Array.from({ length: 12 }, (_, i) => i + 1).join(',')
+
+  it('takes a bare grid whole', () => {
+    const found = findGrid(grid(8, 12))
+    expect(found.ok).toBe(true)
+    if (!found.ok) return
+    expect(found.firstLine).toBe(1)
+    expect(found.lastLine).toBe(8)
+    expect(found.skippedAbove).toBe(0)
+  })
+
+  it('accepts the workbook plate, whose lower half is empty', () => {
+    // The reason "8 by 12" counts cells and not readings: this plate is 24 numbers in a full
+    // frame, and counting numbers would refuse the app's own worked example.
+    const found = findGrid(referencePlateText())
+    expect(found.ok).toBe(true)
+  })
+
+  it.each([
+    ['a blank line between metadata and grid', 3, 'A,1\nB,2\nC,3\n\n'],
+    ['no blank line at all', 2, 'Software Version,3.5.1\nWavelength,562nm\n'],
+  ])('finds the grid under instrument metadata with %s', (_name, skipped, preamble) => {
+    const found = findGrid(preamble + columnHeader + '\n' + grid(8, 12))
+    expect(found.ok).toBe(true)
+    if (!found.ok) return
+    expect(found.skippedAbove).toBe(skipped)
+    expect(parsePlate(found.text).nRows).toBe(8)
+  })
+
+  it('refuses a file holding two reads rather than taking the first', () => {
+    const refusal = findGrid(grid(8, 12) + '\n\n' + grid(8, 12))
+    expect(refusal.ok).toBe(false)
+    if (refusal.ok) return
+    expect(refusal.kind).toBe('several')
+    expect(refusal.message).toContain('2 grids')
+  })
+
+  it.each([
+    [4, 12],
+    [8, 11],
+    [16, 12],
+    [16, 24],
+  ])('refuses a %i by %i grid, naming the shape it found', (rows, cols) => {
+    const refusal = findGrid(grid(rows, cols))
+    expect(refusal.ok).toBe(false)
+    if (refusal.ok) return
+    expect(refusal.kind).toBe('shape')
+    expect(refusal.message).toContain(`${rows} by ${cols}`)
+  })
+
+  it.each([
+    ['a file of prose', 'Software Version,3.5.1\nPlate,Read 1'],
+    ['an empty file', ''],
+    ['a single row, which is not a grid', row(12, 0.1)],
+    ['a one-column column of numbers', '0.1\n0.2\n0.3'],
+    ['a row label with nothing after it', 'A,0.1\nB,0.2'],
+  ])('refuses %s as holding no grid', (_name, text) => {
+    const refusal = findGrid(text)
+    expect(refusal.ok).toBe(false)
+    if (refusal.ok) return
+    expect(refusal.kind).toBe('none')
+    expect(refusal.message).toContain('no grid')
+  })
+
+  it('reads a grid that runs to the last line of the file', () => {
+    const found = findGrid('Instrument,X\n' + grid(8, 12))
+    expect(found.ok).toBe(true)
+    if (!found.ok) return
+    expect(found.lastLine).toBe(9)
+  })
+
+  it.each(['-', 'NA', 'n/a', 'null', 'none', '#N/A', 'OVRFLW', 'overflow', '####', 'Saturated'])(
+    'counts a row holding %s as part of the grid',
+    (token) => {
+      const withToken = [row(12, 0), `${token},` + row(11, 0.2), ...Array.from({ length: 6 }, (_, r) => row(12, 0.3 + r * 0.1))].join('\n')
+      const found = findGrid(withToken)
+      expect(found.ok).toBe(true)
+    },
+  )
 })

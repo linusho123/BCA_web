@@ -29,7 +29,16 @@ import {
   mapStandards,
   parseRegion,
 } from '~/domain/layout'
-import { EMPTY_PLATE, parsePlate, rawGrid, writeWell, type PlateData } from '~/domain/plate'
+import {
+  EMPTY_PLATE,
+  findGrid,
+  parsePlate,
+  rawGrid,
+  writeWell,
+  type GridFound,
+  type GridRefusal,
+  type PlateData,
+} from '~/domain/plate'
 import { curvePlot, type CurvePlot } from '~/domain/plot'
 import {
   REFERENCE_DESIRED_PROTEIN_UG,
@@ -343,6 +352,77 @@ export function pasteGrid(text: string): void {
   standardRegions.value = defaultLayout(parsePlate(text), []).standardRegions
 }
 
+// --- import ------------------------------------------------------------------
+
+/** What the last import did, for the report or the refusal the page shows. */
+export type ImportOutcome =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'read'; readonly found: GridFound }
+  | { readonly kind: 'refused'; readonly refusal: GridRefusal }
+
+export const lastImport = signal<ImportOutcome>({ kind: 'none' })
+
+/** What the plate and the layout were before the last import, so it can be put back. */
+interface Undo {
+  readonly plateText: string
+  readonly standardRegions: readonly string[]
+  readonly sampleAssignments: ReadonlyArray<readonly [string, string]>
+}
+
+const undoStack = signal<Undo | null>(null)
+
+/** Whether there is an import to undo. */
+export const canUndoImport = computed(() => undoStack.value !== null)
+
+/**
+ * Read a file's text into the grid, or refuse it and change nothing.
+ *
+ * The refusal path is the point of this function. A reader export is a grid wrapped in whatever
+ * the instrument printed, so the grid has to be found rather than assumed — but a file holding
+ * two reads is refused rather than halved, because taking the first would be a guess that looks
+ * exactly like a successful import, and every stage downstream would compute on it.
+ *
+ * A refusal leaves the plate, the painting and the report of the previous import alone. The
+ * only thing that changes is what the page says about this file.
+ */
+export function importFile(text: string): void {
+  const found = findGrid(text)
+  if (!found.ok) {
+    lastImport.value = { kind: 'refused', refusal: found }
+    return
+  }
+
+  undoStack.value = {
+    plateText: plateText.value,
+    standardRegions: standardRegions.value,
+    sampleAssignments: sampleAssignments.value,
+  }
+  pasteGrid(found.text)
+  lastImport.value = { kind: 'read', found }
+}
+
+/**
+ * Refuse a file before it was ever read, for a reason the file boundary raised.
+ *
+ * Separate from `importFile` because the thing being refused here is the file itself — too
+ * large, or not the shape a `File` is — rather than what was inside it. Both end in the same
+ * place: the page says why, and nothing else changes.
+ */
+export function rejectImport(message: string): void {
+  lastImport.value = { kind: 'refused', refusal: { ok: false, kind: 'none', message } }
+}
+
+/** Put back the plate and the layout the last import replaced. */
+export function undoImport(): void {
+  const previous = undoStack.value
+  if (previous === null) return
+  plateText.value = previous.plateText
+  standardRegions.value = previous.standardRegions
+  sampleAssignments.value = previous.sampleAssignments
+  undoStack.value = null
+  lastImport.value = { kind: 'none' }
+}
+
 // --- actions ---------------------------------------------------------------
 
 /**
@@ -412,6 +492,8 @@ export function correctWell(well: string, value: number): void {
 export function reset(): void {
   plateText.value = ''
   savePlateText('')
+  lastImport.value = { kind: 'none' }
+  undoStack.value = null
   sampleNames.value = []
   standardRegions.value = []
   sampleAssignments.value = []

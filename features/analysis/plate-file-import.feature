@@ -37,7 +37,7 @@ Feature: Filling the grid from a reader file
   Scenario: A bare grid fills every well it covers
     When a file holding an 8 by 12 grid is imported
     Then well "A1" holds 0.132
-    And well "H12" holds 2.051
+    And well "H12" holds 0.262
     And the grid shows 8 rows and 12 columns
 
   # AC1 — "8 by 12" counts the grid's cells, not how many of them hold a number. The

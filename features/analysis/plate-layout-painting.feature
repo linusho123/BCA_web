@@ -23,14 +23,14 @@ Feature: Painting which wells hold which sample
     AC3  A well's assignment is readable as text, never carried by colour alone.
     AC4  Every well can be reached and painted with the keyboard alone.
     AC5  A well nobody assigned is left out of the calculation and reported on by nothing.
+    AC6  An empty well inside an assignment is reported, because it is declared work missing.
     AC7  Any new plate data clears sample painting; standards are re-derived from the plate.
 
   The palette holds the standards, one entry per sample name, and an erase entry. Sample names
   come from the existing sample-names field, which the grid does not replace.
 
-  The empty-well-inside-an-assignment rule is specified in spec/plate-empty-wells.feature and
-  is not built here. The domain half of it is done and passing in the node suite; what is not
-  proven is the path from a painted region to that warning on the page.
+  An empty well inside an assignment is the one empty well the app reports on, because it is
+  work someone declared and did not do.
 
   Background:
     Given the workbook's plate pasted into the grid
@@ -91,6 +91,15 @@ Feature: Painting which wells hold which sample
     Given wells "C1:C3" assigned to "MCF7"
     Then no issue is raised about a well outside an assignment
     And "MCF7" reports a concentration from 3 wells
+
+  # AC6 — the one empty well that does get reported, because someone declared it
+  @negative
+  Scenario: An empty well inside an assignment is reported against that sample
+    Given the workbook's plate with well "C2" holding no measurement
+    When wells "C1:C3" are painted as "MCF7"
+    Then an issue at warn severity names well "C2"
+    And the issue names "MCF7" as the sample it belongs to
+    And "MCF7" reports a concentration from 2 wells
 
   # AC7 — the safety rule, applied to the path that makes it matter
   Scenario: A newly pasted plate clears the sample painting

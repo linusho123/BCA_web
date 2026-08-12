@@ -21,6 +21,7 @@ import * as analysis from '~/state/analysis'
 import { CurveChart } from './chart/CurveChart'
 import { IssuePanel } from './IssuePanel'
 import { PlateGrid } from './PlateGrid'
+import { PlateImport } from './PlateImport'
 import { Table } from './Table'
 import { loadingColumns, sampleColumns, standardColumns } from './columns'
 import { download } from './download'
@@ -245,6 +246,8 @@ function PlatePanel() {
         The grid and the paste box are one input, not two. Pasting fills the wells; typing in a
         well edits the same plate. Whichever a person reaches for, the other shows the result.
       */}
+      <PlateImport />
+
       <PlateGrid />
 
       <div class="flex flex-wrap items-end gap-3">

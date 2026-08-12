@@ -16,7 +16,7 @@ directory; a scenario that cannot pass yet does not get written as a scenario.
 | `component` | Chromium | one rendered component |
 | `acceptance:ui` | Chromium | the whole page, focus and all |
 
-The split is in `vite.config.ts`, not in how the features are written. Sixteen of the nineteen
+The split is in `vite.config.ts`, not in how the features are written. Sixteen of the twenty-two
 are claims about the assay and run in node in milliseconds. Three are claims about a rendered
 page — that focus reaches what hover reaches, that a failed stage leaves its neighbours drawn,
 that a restored session asks for a plate rather than listing what is missing — and those cannot

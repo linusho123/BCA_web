@@ -77,6 +77,111 @@ export const EMPTY_PLATE: PlateData = Object.freeze({
 /** What an un-plated well is written as. Matches what the readers in this lab emit. */
 export const EMPTY_WELL_TOKEN = '-'
 
+/** A grid located inside a file, with what surrounded it. */
+export interface GridFound {
+  readonly ok: true
+  readonly text: string
+  readonly firstLine: number
+  readonly lastLine: number
+  readonly skippedAbove: number
+}
+
+/** Why a file was not imported. `message` is what the researcher is shown. */
+export interface GridRefusal {
+  readonly ok: false
+  readonly kind: 'none' | 'several' | 'shape'
+  readonly message: string
+}
+
+/** Tokens a plate row may hold that are not numbers: un-plated wells and saturated detectors. */
+const PLATE_ISH = /^(|-|na|n\/a|null|none|#n\/a|ovrflw|overflow|####|saturated)$/i
+
+/**
+ * Whether a line could be a row of a plate, as opposed to something an instrument printed.
+ *
+ * Every cell must be a reading, an un-plated well or a saturation sentinel — with one exception,
+ * a leading single letter, which is how a reader labels the row. "Wavelength,562nm" fails on
+ * "562nm"; ",1,2,3..." passes, because a column header is numeric and gets stripped later by
+ * `parsePlate` along with the row letters.
+ */
+function isPlateRow(cells: readonly string[]): boolean {
+  if (cells.length < 2) return false
+  const body = /^[A-Za-z]$/.test(cells[0] as string) ? cells.slice(1) : cells
+  if (body.length < 2) return false
+  return body.every((cell) => parseNumeric(cell) !== undefined || PLATE_ISH.test(cell.trim()))
+}
+
+/**
+ * Find the one grid in a file, or say why there isn't one.
+ *
+ * Reader exports are a grid wrapped in whatever the instrument felt like printing, so the grid
+ * has to be located rather than assumed. What this will not do is choose: a file holding two
+ * reads is refused, because taking the first would be a guess that looks exactly like a
+ * successful import. Measured before the rule was written — two reads concatenate into a
+ * plausible 16-row plate with the labels A to H twice, and every stage downstream computes on
+ * it without complaint.
+ *
+ * "8 by 12" counts the grid's cells, not how many hold a number: the workbook's own plate is 24
+ * readings in an 8 by 12 frame with rows E to H empty, and counting numbers would refuse it.
+ */
+export function findGrid(text: string): GridFound | GridRefusal {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n')
+
+  // Maximal runs of consecutive plate-ish lines. A blank line or a line of instrument prose
+  // ends the run, which is what separates two reads in one file into two candidates.
+  const runs: Array<{ first: number; last: number }> = []
+  let start = -1
+  lines.forEach((line, i) => {
+    const isRow = line.trim() !== '' && isPlateRow(splitRow(line))
+    if (isRow && start < 0) start = i
+    if (!isRow && start >= 0) {
+      if (i - start >= 2) runs.push({ first: start, last: i - 1 })
+      start = -1
+    }
+  })
+  if (start >= 0 && lines.length - start >= 2) {
+    runs.push({ first: start, last: lines.length - 1 })
+  }
+
+  if (runs.length === 0) {
+    return {
+      ok: false,
+      kind: 'none',
+      message: 'no grid of absorbances was found in this file',
+    }
+  }
+  if (runs.length > 1) {
+    return {
+      ok: false,
+      kind: 'several',
+      message:
+        `this file holds ${runs.length} grids, and picking one for you would look exactly ` +
+        'like a successful import. Save just the read you want and try again',
+    }
+  }
+
+  const run = runs[0] as { first: number; last: number }
+  const block = lines.slice(run.first, run.last + 1).join('\n')
+  const parsed = parsePlate(block)
+  if (parsed.nRows !== PLATE_ROWS.length || parsed.nCols !== PLATE_COLUMNS.length) {
+    return {
+      ok: false,
+      kind: 'shape',
+      message:
+        `the grid in this file is ${parsed.nRows} by ${parsed.nCols}, not ` +
+        `${PLATE_ROWS.length} by ${PLATE_COLUMNS.length}`,
+    }
+  }
+
+  return {
+    ok: true,
+    text: block,
+    firstLine: run.first + 1,
+    lastLine: run.last + 1,
+    skippedAbove: lines.slice(0, run.first).filter((l) => l.trim() !== '').length,
+  }
+}
+
 /**
  * The grid as 8 by 12 cells of raw text, whatever shape the text arrived in.
  *
