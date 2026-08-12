@@ -114,6 +114,53 @@ touches nothing above it.
 Exports are CSV and JSON, built as a Blob and downloaded by the browser — the same promise as
 above, restated as a refusal.
 
+## The recovery warning
+
+The standards table has a **Recovery** column, and a standard outside 80–120 % raises a warning
+like this one:
+
+> standard H back-calculates to 134.0 % of its nominal value, outside 80-120 %
+
+**Nominal** is the concentration you believe you pipetted into that tube — 25 µg/mL for tube H in
+the worked example. It comes from the dilution plan, not from the plate reader.
+
+**Back-calculated** is what the fitted curve says that tube held, given the absorbance it actually
+read. It is the same calculation the app does for an unknown, run on a standard whose answer is
+already known. In code it is `polyval(coefficients, absorbance)` in `domain/curve.ts`.
+
+```
+recovery % = 100 × (what the curve says the tube held) ÷ (what you meant to put in it)
+```
+
+100 % means the curve reproduces that standard exactly. The bounds are
+`RECOVERY_LOW_PERCENT = 80` and `RECOVERY_HIGH_PERCENT = 120` in `domain/constants.ts`.
+
+Two details worth knowing before you read a number:
+
+- **The blank has no recovery.** Its nominal is 0, and dividing by it is undefined, so the column
+  shows a dash rather than a number. Same for any level dropped before the fit.
+- **The absorbance is blank-corrected first,** when blank subtraction is on. Tube H reads 0.159
+  against a blank of 0.132, so the curve is asked about 0.027, not 0.159.
+
+### Why H reads 134 % in the worked example
+
+That number is real, not a bug, and it is a property of the lab's own reference data — pinned as
+a scenario in `curve-fitting/standard-curve.feature`, which asserts H at about 134 % and every
+other standard between 80 and 120 %. The rest of the series recovers between 91.7 % and 104.4 %.
+
+H is the lowest non-zero standard, at 25 µg/mL. After blank correction it is 0.027 absorbance
+units above nothing, which is inside the reader's own noise. The fitted cubic has an intercept of
++13.8 µg/mL — at zero absorbance the curve does not pass through zero — and 13.8 is already 55 %
+of 25. So the curve says 33.5 where you meant 25, and a 8.5 µg/mL miss on a tube this small is
+34 %. The same absolute error at tube C (1000 µg/mL) would be under 1 %.
+
+**What to do about it.** A single low standard over 120 % is the ordinary shape of a BCA curve at
+the bottom of its range, and it is a reason to distrust *unknowns that read near that end*, not
+the curve as a whole. If your samples read in the middle, it does not affect them. If they read
+down at H, dilute less and re-run so they land higher on the curve. A standard in the middle of
+the series recovering badly is a different matter — that is a pipetting error in the series, and
+the tube it names is the one to re-make.
+
 ## What was ported, and what was not
 
 `BCA_quarto` shipped a Quarto site with Shinylive blocks: Python calculations compiled to WASM,
