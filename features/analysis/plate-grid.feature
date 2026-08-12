@@ -42,10 +42,12 @@ Feature: Entering a plate on a 96-well grid
     Then well "C1" holds 0.430
     And the page no longer states that a plate is needed to begin
 
-  # AC2 — the existing paste path, landing in the new surface
+  # AC2 — the existing paste path, landing in the new surface.
+  # A1 is 2.051 because the standard series is pipetted down from the 2000 ug/mL tube in
+  # column 1; see default-plate-layout.feature AC7.
   Scenario: Pasting a grid fills the wells it covers
     When the workbook's plate is pasted into the paste box
-    Then well "A1" holds 0.132
+    Then well "A1" holds 2.051
     And well "C1" holds 0.430
     And the grid shows 8 rows and 12 columns
 
@@ -54,7 +56,7 @@ Feature: Entering a plate on a 96-well grid
     Given the workbook's plate pasted into the paste box
     When well "A3" is typed into with "0.2705"
     Then well "A3" holds 0.2705
-    And well "A4" holds 0.391
+    And well "A4" holds 0.895
 
   # AC3 — an empty well is absent, not zero; a zero absorbance is a real reading
   Scenario Outline: A well reads back exactly what was entered in it

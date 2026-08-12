@@ -114,11 +114,14 @@ describe('labels and shape', () => {
   })
 
   it('reads back by row and by column under the plate labels', () => {
+    // Column 1 is the top of the series, column 9 the blank: the plate is laid out the way it is
+    // pipetted, which is the reverse of the workbook's ascending list.
+    const plateRow = [...REFERENCE_ABSORBANCES].reverse()
     const data = parsePlate(referencePlateText())
-    expect(wellValue(data, 'A', 1)).toBe(0.132)
-    expect(wellValue(data, 'a', 9)).toBe(2.051)
-    expect(extractRow(data, 'A').slice(0, 9)).toEqual([...REFERENCE_ABSORBANCES])
-    expect(extractColumn(data, 1)).toEqual([0.132, 0.132, 0.43, 0.36, null, null, null, null])
+    expect(wellValue(data, 'A', 1)).toBe(2.051)
+    expect(wellValue(data, 'a', 9)).toBe(0.132)
+    expect(extractRow(data, 'A').slice(0, 9)).toEqual(plateRow)
+    expect(extractColumn(data, 1)).toEqual([2.051, 2.051, 0.43, 0.36, null, null, null, null])
   })
 
   it.each([
@@ -376,9 +379,12 @@ describe('writeWell', () => {
   })
 
   it('replaces one well of an existing grid and disturbs no other', () => {
+    // Row A runs down from the 2000 ug/mL tube, so its nth well is the nth absorbance counted
+    // from the end of the workbook's ascending list.
+    const plateRow = [...REFERENCE_ABSORBANCES].reverse()
     const edited = writeWell(referencePlateText(), 'A3', '0.2705')
     expect(at(edited, 'A', 3)).toBe(0.2705)
-    expect(at(edited, 'A', 4)).toBe(REFERENCE_ABSORBANCES[3])
+    expect(at(edited, 'A', 4)).toBe(plateRow[3])
     expect(at(edited, 'C', 1)).toBe(0.43)
   })
 

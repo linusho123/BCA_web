@@ -51,7 +51,7 @@ Feature: Filling the grid from a reader file
   # numbers instead would refuse the app's own worked example.
   Scenario: A grid whose lower rows are empty is still 8 by 12
     When a file holding an 8 by 12 grid with rows "E" to "H" empty is imported
-    Then well "A1" holds 0.132
+    Then well "A1" holds 2.051
     And well "E1" is empty
     And the import is not refused
 

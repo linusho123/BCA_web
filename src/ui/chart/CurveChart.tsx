@@ -63,8 +63,53 @@ export function chartOption(plot: CurvePlot): EChartsOption {
 export function CurveChart({ plot, height = 380, ariaLabel }: CurveChartProps) {
   const host = useRef<HTMLDivElement>(null)
   const chart = useRef<echarts.ECharts | null>(null)
+  const layer = useRef<HTMLDivElement>(null)
   const [positions, setPositions] = useState<ReadonlyArray<readonly [number, number]>>([])
   const [active, setActive] = useState<number | null>(null)
+
+  /**
+   * Which point the pointer last resolved to, which is not always the mark that caught the event.
+   * `onMouseLeave` needs it: the leave arrives on the covering mark, and clearing `index` there
+   * would leave the readout stuck on the point that mark had answered for.
+   */
+  const pointed = useRef<number | null>(null)
+
+  /**
+   * Resolve a pointer to the mark whose centre is nearest it, not to the box that caught it.
+   *
+   * At the bottom of the curve the standards are genuinely crowded — the blank and the 25 µg/mL
+   * standard sit about ten pixels apart at an ordinary width, under marks two dozen pixels
+   * across — so their hit areas overlap and whichever paints last covers the other outright.
+   * Routing by the caught box means the covering mark answers for its neighbour, and a reader
+   * pointing at one standard is told about a different one. Nearest-centre is what they were
+   * aiming at; see features/analysis/curve-plot-crowding.feature.
+   *
+   * Measured against `positions` rather than against the rendered buttons, because a point the
+   * chart could not place is skipped in the mark layer — so the nth button is not reliably the
+   * nth point, and resolving through the DOM would answer with a neighbour's identity in exactly
+   * the case this exists to prevent. Unplaced points sit far off-canvas and so are never nearest.
+   *
+   * `caught` is the fallback rather than the answer, for the case where the layer has not laid
+   * out yet and every measurement would be zero.
+   */
+  const pointAt = (event: { clientX: number; clientY: number }, caught: number): void => {
+    const box = layer.current?.getBoundingClientRect()
+    let best = caught
+    if (box) {
+      const x = event.clientX - box.left
+      const y = event.clientY - box.top
+      let nearest = Infinity
+      positions.forEach((at, i) => {
+        const distance = (at[0] - x) ** 2 + (at[1] - y) ** 2
+        if (distance < nearest) {
+          nearest = distance
+          best = i
+        }
+      })
+    }
+    pointed.current = best
+    setActive(best)
+  }
 
   // The resize handler outlives the render that created it, so it reads the plot through a ref
   // rather than through its closure — otherwise a resize after a re-fit would reposition the
@@ -144,7 +189,7 @@ export function CurveChart({ plot, height = 380, ariaLabel }: CurveChartProps) {
           these ARE the accessible chart. The canvas behind them is decoration by the time a
           screen reader gets here.
         */}
-        <div class="pointer-events-none absolute inset-0">
+        <div ref={layer} class="pointer-events-none absolute inset-0">
           {plot.points.map((point, index) => {
             const at = positions[index]
             if (!at) return null
@@ -159,11 +204,11 @@ export function CurveChart({ plot, height = 380, ariaLabel }: CurveChartProps) {
                        rounded-full focus:outline-2 focus:outline-offset-2 focus:outline-brand-600"
                 style={{ left: `${at[0]}px`, top: `${at[1]}px` }}
                 aria-label={readoutText(point)}
-                onMouseEnter={() => setActive(index)}
-                onMouseLeave={() => setActive((i) => (i === index ? null : i))}
+                onMouseEnter={(e) => pointAt(e, index)}
+                onMouseLeave={() => setActive((i) => (i === pointed.current ? null : i))}
                 onFocus={() => setActive(index)}
                 onBlur={() => setActive((i) => (i === index ? null : i))}
-                onClick={() => setActive(index)}
+                onClick={(e) => pointAt(e, index)}
               />
             )
           })}

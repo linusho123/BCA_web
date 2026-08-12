@@ -18,7 +18,13 @@ import {
   number,
   numberList,
 } from '../support/world'
-import { PLATE_ROWS, PLATE_LOAD_ROUTES, PLATE_LOAD_ROUTE_THAT_OPENS } from '~/domain/constants'
+import {
+  ANALYSIS_STANDARD_CONCENTRATIONS,
+  ANALYSIS_STANDARD_TUBES,
+  PLATE_ROWS,
+  PLATE_LOAD_ROUTES,
+  PLATE_LOAD_ROUTE_THAT_OPENS,
+} from '~/domain/constants'
 import { type Issue } from '~/domain/errors'
 import {
   type PlateData,
@@ -871,3 +877,57 @@ Then('both sample names and their wells survive', (world: World) => {
 // `numberList` is imported for the concentration lists the mapping scenarios name in prose; it is
 // referenced here so a future scenario that spells its own concentrations has the parser to hand.
 void numberList
+
+/**
+ * Which concentration the app actually puts in a given well.
+ *
+ * Deliberately routed through `mapStandards` with the app's own constants, rather than read off
+ * `ANALYSIS_STANDARD_CONCENTRATIONS` by index. Indexing the constant would assert that the list
+ * equals itself and pass just as happily with the series pointing the wrong way — which is the
+ * defect these scenarios exist to catch. This asks the mapping the same question the analysis
+ * page asks it, so reversing either the constant or the mapping turns these red.
+ */
+function standardAt(world: World, well: string): { conc: number; tube: string | null } {
+  const column = parseInt(well.slice(1), 10)
+  const mapped = mapStandards(
+    plate(world),
+    [`A1:A${ANALYSIS_STANDARD_CONCENTRATIONS.length}`],
+    ANALYSIS_STANDARD_CONCENTRATIONS,
+    { tubeIds: ANALYSIS_STANDARD_TUBES },
+  )
+  const level = mapped.levels[column - 1]
+  if (level === undefined) throw new Error(`no standard was mapped to ${well}`)
+  return { conc: level.concUgPerML, tube: level.tubeId }
+}
+
+const expectStandard = (world: World, well: string, conc: number, tube: string): void => {
+  const found = standardAt(world, well)
+  expect(found.conc, `the concentration in ${well}`).toBe(conc)
+  expect(found.tube, `the tube in ${well}`).toBe(tube)
+}
+
+// The slash is escaped because cucumber expressions read "/" as alternation: "ug/mL standard"
+// would otherwise match "ug" or "mL standard" rather than the words actually written.
+Then(
+  'well {string} is the {int} ug\\/mL standard, from tube {string}',
+  (world: World, well: string, conc: number, tube: string) => {
+    expectStandard(world, well, conc, tube)
+  },
+)
+
+Then(
+  'well {string} is the {int} ug\\/mL blank, from tube {string}',
+  (world: World, well: string, conc: number, tube: string) => {
+    expectStandard(world, well, conc, tube)
+  },
+)
+
+Then('the standard concentrations descend from column 1 to column 9', (world: World) => {
+  const series = ANALYSIS_STANDARD_CONCENTRATIONS.map(
+    (_, i) => standardAt(world, `A${i + 1}`).conc,
+  )
+  const descending = [...series].sort((a, b) => b - a)
+  expect(series, 'the series across row A').toEqual(descending)
+  // Sorted-ness alone would accept a series that never changes, so pin the ends too.
+  expect(series[0], 'column 1').toBeGreaterThan(series[series.length - 1] as number)
+})

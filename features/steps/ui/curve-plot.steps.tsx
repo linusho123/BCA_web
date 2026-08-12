@@ -44,8 +44,14 @@ import {
   textOf,
 } from './support'
 
-/** The 25 µg/mL standard is tube H in the reference series — see ANALYSIS_STANDARD_TUBES. */
-const STANDARD_25 = 'H'
+/**
+ * The 500 µg/mL standard is tube E in the reference series — see ANALYSIS_STANDARD_TUBES.
+ *
+ * Mid-curve on purpose. The low standards sit close enough together that their marks overlap,
+ * and a pointer aimed at one of those cannot be routed to it by element at all — which is a
+ * claim about crowding, proved in curve-plot-crowding.feature, not about the readout.
+ */
+const MID_STANDARD = 'E'
 
 /** An absorbance past the top standard (2.051), so the sample plots outside the calibrated range. */
 const ABOVE_EVERY_STANDARD = 2.4
@@ -199,14 +205,14 @@ Given('a sample named {string}', async (world: World, name: string) => {
   world.sampleName = name
 })
 
-Given('the 25 ug\\/mL standard is focused', async (world: World) => {
+Given('the 500 ug\\/mL standard is focused', async (world: World) => {
   releaseFocus()
   const reached = await tabUntil(
-    (el) => el instanceof HTMLElement && el.getAttribute('data-label') === STANDARD_25,
+    (el) => el instanceof HTMLElement && el.getAttribute('data-label') === MID_STANDARD,
   )
-  expect(reached, `tabbing never reached the ${STANDARD_25} standard`).toBe(true)
+  expect(reached, `tabbing never reached the ${MID_STANDARD} standard`).toBe(true)
   await settle()
-  world.focusedPoint = pointLabelled(STANDARD_25)
+  world.focusedPoint = pointLabelled(MID_STANDARD)
 })
 
 // --- When -------------------------------------------------------------------
@@ -223,8 +229,8 @@ When('the chart is rendered', async () => {
   await drawn()
 })
 
-When(/^the 25 ug\/mL standard is reached by (.+)$/, async (world: World, route: string) => {
-  const mark = markLabelled(STANDARD_25)
+When(/^the 500 ug\/mL standard is reached by (.+)$/, async (world: World, route: string) => {
+  const mark = markLabelled(MID_STANDARD)
 
   if (route === 'pointer hover') {
     await userEvent.hover(mark)
@@ -233,15 +239,15 @@ When(/^the 25 ug\/mL standard is reached by (.+)$/, async (world: World, route: 
   } else if (route === 'keyboard focus') {
     releaseFocus()
     const reached = await tabUntil(
-      (el) => el instanceof HTMLElement && el.getAttribute('data-label') === STANDARD_25,
+      (el) => el instanceof HTMLElement && el.getAttribute('data-label') === MID_STANDARD,
     )
-    expect(reached, `tabbing never reached the ${STANDARD_25} standard`).toBe(true)
+    expect(reached, `tabbing never reached the ${MID_STANDARD} standard`).toBe(true)
   } else {
     throw new Error(`"${route}" is not a route this chart offers`)
   }
 
   await settle()
-  world.reachedPoint = pointLabelled(STANDARD_25)
+  world.reachedPoint = pointLabelled(MID_STANDARD)
 })
 
 When('focus leaves the chart', async () => {
@@ -334,8 +340,8 @@ Then('the chart shows the same points and the same readout', async () => {
     plot.points.length,
   )
 
-  const point = pointLabelled(STANDARD_25)
-  await userEvent.click(markLabelled(STANDARD_25))
+  const point = pointLabelled(MID_STANDARD)
+  await userEvent.click(markLabelled(MID_STANDARD))
   await settle()
   expect(textOf(one('curve-readout')), 'reduced motion changed what the readout says').toBe(
     readoutText(point),

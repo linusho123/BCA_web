@@ -23,6 +23,16 @@ const codesOf = (issues: readonly { code: IssueCode }[]) => issues.map((i) => i.
 
 const PLATE = parsePlate(referencePlateText())
 
+/**
+ * The reference series as the *plate* holds it: most concentrated in column 1, descending to the
+ * blank in column 9. The `REFERENCE_*` constants are in the workbook's ascending order, which is
+ * the reverse; pairing those directly with `PLATE` pairs every well with the wrong tube, which is
+ * exactly the defect `default-plate-layout.feature` AC7 now pins.
+ */
+const PLATE_CONCENTRATIONS = [...REFERENCE_CONCENTRATIONS].reverse()
+const PLATE_ABSORBANCES = [...REFERENCE_ABSORBANCES].reverse()
+const PLATE_TUBE_IDS = [...REFERENCE_TUBE_IDS].reverse()
+
 describe('wellLabel', () => {
   it.each([
     ['a', 3, 'A3'],
@@ -150,27 +160,33 @@ describe('wellsToRegion', () => {
 
 describe('mapStandards', () => {
   it('reads the workbook standards off the reference plate', () => {
-    const { levels, issues } = mapStandards(PLATE, ['A1:A9'], REFERENCE_CONCENTRATIONS, {
-      tubeIds: REFERENCE_TUBE_IDS,
+    const { levels, issues } = mapStandards(PLATE, ['A1:A9'], PLATE_CONCENTRATIONS, {
+      tubeIds: PLATE_TUBE_IDS,
     })
     expect(issues).toEqual([])
     expect(levels).toHaveLength(9)
-    expect(levels.map((l) => l.concUgPerML)).toEqual([...REFERENCE_CONCENTRATIONS])
-    expect(levels.map((l) => l.replicates[0])).toEqual([...REFERENCE_ABSORBANCES])
-    expect(levels.map((l) => l.tubeId)).toEqual([...REFERENCE_TUBE_IDS])
+    expect(levels.map((l) => l.concUgPerML)).toEqual(PLATE_CONCENTRATIONS)
+    expect(levels.map((l) => l.replicates[0])).toEqual(PLATE_ABSORBANCES)
+    expect(levels.map((l) => l.tubeId)).toEqual(PLATE_TUBE_IDS)
+    // The top of the series is in column 1, where the bench pipettes it.
+    expect(levels[0]?.concUgPerML).toBe(2000)
+    expect(levels[8]?.concUgPerML).toBe(0)
   })
 
   it('treats a second region as a second read of every level', () => {
-    const { levels } = mapStandards(PLATE, ['A1:A9', 'B1:B9'], REFERENCE_CONCENTRATIONS)
-    expect(levels[0]?.replicates).toEqual([0.132, 0.132])
-    expect(levels[8]?.replicates).toEqual([2.051, 2.051])
+    const { levels } = mapStandards(PLATE, ['A1:A9', 'B1:B9'], PLATE_CONCENTRATIONS)
+    expect(levels[0]?.replicates).toEqual([2.051, 2.051])
+    expect(levels[8]?.replicates).toEqual([0.132, 0.132])
   })
 
   it('pairs the nth well with the nth concentration, whichever way the series runs', () => {
-    const descending = [...REFERENCE_CONCENTRATIONS].reverse()
-    const { levels } = mapStandards(PLATE, ['A9:A1'], descending)
-    expect(levels[0]?.concUgPerML).toBe(2000)
-    expect(levels[0]?.replicates).toEqual([2.051])
+    // Walking the row backwards with the concentrations backwards too must reach the same
+    // pairing: the mapping follows the region's order and holds no opinion of its own.
+    const { levels } = mapStandards(PLATE, ['A9:A1'], REFERENCE_CONCENTRATIONS)
+    expect(levels[0]?.concUgPerML).toBe(0)
+    expect(levels[0]?.replicates).toEqual([0.132])
+    expect(levels[8]?.concUgPerML).toBe(2000)
+    expect(levels[8]?.replicates).toEqual([2.051])
   })
 
   it('refuses a region whose length does not match the concentration count', () => {
@@ -204,10 +220,13 @@ describe('mapStandards', () => {
 
   it('keeps an unreadable well as an absent replicate rather than withholding the fit', () => {
     // A blank well is data about the read, not a mistake in the layout, so the curve still fits.
+    // 0.262 is the 125 ug/mL tube, which the plate holds in column 7 — the row runs down from
+    // 2000, so the hole is not where the workbook's ascending list would put it.
     const holed = parsePlate(referencePlateText().replace('0.262', '-'))
-    const { levels, issues } = mapStandards(holed, ['A1:A9'], REFERENCE_CONCENTRATIONS)
+    const { levels, issues } = mapStandards(holed, ['A1:A9'], PLATE_CONCENTRATIONS)
     expect(levels).toHaveLength(9)
-    expect(levels[2]?.replicates).toEqual([null])
+    expect(levels[6]?.concUgPerML).toBe(125)
+    expect(levels[6]?.replicates).toEqual([null])
     expect(hasCode(issues, IssueCode.UNREADABLE_WELL_IN_REGION)).toBe(true)
     expect(hasErrors(issues)).toBe(false)
   })

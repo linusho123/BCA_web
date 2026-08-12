@@ -12,6 +12,7 @@
 import './support'
 import './analysis.steps'
 import './curve-plot.steps'
+import './curve-crowding.steps'
 import './plate-grid.steps'
 import './painting.steps'
 import './import.steps'

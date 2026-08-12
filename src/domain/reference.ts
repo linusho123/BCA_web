@@ -143,9 +143,14 @@ export function referencePlateText(emptyToken = '-'): string {
   const pad = (values: readonly (number | string)[]): string =>
     [...values, ...Array<string>(12 - values.length).fill(emptyToken)].join('\t')
   const blank = pad([])
+  // Reversed, because `REFERENCE_ABSORBANCES` is in the workbook's ascending order while a plate
+  // is pipetted with the most concentrated tube in column 1. The worked example is the one thing
+  // in the app a new user copies, so it has to be laid out the way their own plate will be —
+  // and if it were not reversed here, the app would now read it upside down.
+  const rowA = [...REFERENCE_ABSORBANCES].reverse()
   return [
-    pad(REFERENCE_ABSORBANCES),
-    pad(REFERENCE_ABSORBANCES),
+    pad(rowA),
+    pad(rowA),
     pad([0.43, 0.43, 0.43]),
     pad([0.36, 0.36, 0.36]),
     blank,

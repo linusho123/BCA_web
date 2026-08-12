@@ -24,6 +24,7 @@ Feature: Laying out a plate without typing any regions
     AC4  A blank name holds its row open rather than sliding the samples below it up.
     AC5  Wells chosen by clicking collapse to the region string they describe.
     AC6  A region built from clicked wells parses back to those same wells.
+    AC7  Column 1 is the most concentrated standard, and the series descends across the row.
 
   # AC1, AC2, AC3 — the ordinary case, which should need nothing said about it
   Scenario: A two-read plate maps its standards and samples with no regions typed
@@ -117,3 +118,18 @@ Feature: Laying out a plate without typing any regions
     When the layout is derived for the names "MCF7" and "RPMI8226"
     Then no standard regions are produced
     And no sample assignments are produced
+
+  # AC7 — the direction the series is pipetted in, which nothing here used to state.
+  #
+  # The layout scenarios above all say which *wells* are standards and none of them says which
+  # *concentration* lands in which well, so the app paired A1 with the blank and walked upwards
+  # while the bench pipettes A down from the 2000 ug/mL tube. Every test passed: the curve fits
+  # the same nine points in any order, so r-squared was unharmed and the fit looked perfect
+  # while each standard wore the wrong neighbour's absorbance. Naming the direction here is the
+  # whole fix; the constant merely follows it.
+  Scenario: The standard series runs down from column 1, the way it is pipetted
+    Given a plate with the standard series in row A
+    When the layout is derived for the name "MCF7"
+    Then well "A1" is the 2000 ug/mL standard, from tube "A"
+    And well "A9" is the 0 ug/mL blank, from tube "I"
+    And the standard concentrations descend from column 1 to column 9

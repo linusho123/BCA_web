@@ -38,9 +38,14 @@ Feature: Reading the standard curve chart
     When the chart is rendered
     Then the legend names the standards and the samples
 
-  # AC2 — the readout is one function, reached three ways
+  # AC2 — the readout is one function, reached three ways.
+  #
+  # A mid-curve standard, deliberately: the low standards overlap one another on screen, and a
+  # pointer aimed at one of those is asking a question about crowding rather than about the
+  # readout. That question has its own answer in curve-plot-crowding.feature, and asking it here
+  # too would only mean this scenario failed for two unrelated reasons at once.
   Scenario Outline: Hover, click and keyboard focus all reach the same readout
-    When the 25 ug/mL standard is reached by <route>
+    When the 500 ug/mL standard is reached by <route>
     Then the readout names that standard
     And the readout states its absorbance and its concentration
 
@@ -112,6 +117,6 @@ Feature: Reading the standard curve chart
   # AC2 — the readout must not become stale when focus leaves
   @negative
   Scenario: Moving away from every point clears the readout rather than freezing it
-    Given the 25 ug/mL standard is focused
+    Given the 500 ug/mL standard is focused
     When focus leaves the chart
     Then the readout no longer names that standard

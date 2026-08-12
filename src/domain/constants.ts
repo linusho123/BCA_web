@@ -215,14 +215,24 @@ export const DILUTION_PRESETS = Object.freeze({
 export type DilutionPresetId = keyof typeof DILUTION_PRESETS
 
 /**
- * Standard concentrations as laid out in BCA-assay-analysis_template.xlsx row 18, with the
- * tube letters of row 19 — ascending concentration, which is the reverse of the plate column
- * order the series is pipetted in.
+ * Standard concentrations in **plate-column order**: A1 is the most concentrated tube and the
+ * series descends across the row to the blank in A9.
+ *
+ * This is the direction the series is pipetted at the bench, and `default-plate-layout.feature`
+ * AC7 is what fixes it. It is *not* the direction of row 18 of the analysis workbook, which
+ * lists the same nine points ascending; `REFERENCE_CONCENTRATIONS` keeps that order because it
+ * reproduces the sheet, and the two are reversed views of one series rather than a discrepancy.
+ *
+ * These once ran ascending here too, which paired every well with the wrong tube's absorbance.
+ * Nothing caught it: a polynomial fit does not care what order its points arrive in, so the
+ * curve, r-squared and the plotted path were all unchanged, and only the per-standard recovery
+ * and the tube letters on screen were wrong. The order is a fact about the plate, so it is
+ * asserted through the mapping rather than by reading this list back.
  */
 export const ANALYSIS_STANDARD_CONCENTRATIONS: readonly number[] = Object.freeze([
-  0, 25, 125, 250, 500, 750, 1000, 1500, 2000,
+  2000, 1500, 1000, 750, 500, 250, 125, 25, 0,
 ])
 
 export const ANALYSIS_STANDARD_TUBES: readonly string[] = Object.freeze([
-  'I', 'H', 'G', 'F', 'E', 'D', 'C', 'B', 'A',
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
 ])
