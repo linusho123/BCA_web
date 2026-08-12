@@ -14,6 +14,7 @@ import { playwright } from '@vitest/browser-playwright'
 const UI_FEATURES = [
   'features/analysis/analysis-workflow.feature',
   'features/analysis/session-continuity.feature',
+  'features/analysis/settings-persistence.feature',
   'features/analysis/curve-plot-presentation.feature',
   'features/analysis/curve-plot-crowding.feature',
   'features/analysis/plate-grid.feature',

@@ -12,7 +12,6 @@
  * issues rather than throwing.
  */
 
-import { useEffect } from 'preact/hooks'
 import { batch, useSignal } from '@preact/signals'
 import { Download } from 'lucide-preact'
 import { FitModel, StandardsDirection, directionLabel, modelLabel } from '~/domain/constants'
@@ -44,18 +43,11 @@ const STANDARDS_DIRECTIONS = [
 export function AnalysisPage() {
   // Persistence is a side effect of the settings changing, not something a save button does.
   // Reading the snapshot inside the effect subscribes it to every signal the snapshot touches.
-  useEffect(() => analysis.persist(), [
-    // The plate is in here because it is held for the tab now — typing into a well has to
-    // survive a reload, and nothing else in this list changes when a well is typed into.
-    analysis.plateText.value,
-    analysis.sampleNames.value,
-    analysis.standardRegions.value,
-    analysis.sampleAssignments.value,
-    analysis.blankSubtract.value,
-    analysis.fitModel.value,
-    analysis.dilutionFactor.value,
-    analysis.standardsDirection.value,
-  ])
+  // The session is written by the shell, in ui/App.tsx, not here. It was written here first, and
+  // the list of settings this page could see was exactly the list that persisted correctly — the
+  // procedure, chosen on the protocol page, was the one that did not. See the comment on the
+  // effect there, and features/analysis/settings-persistence.feature. The plate is in that list
+  // too: it is held for the tab, so typing into a well has to survive a reload.
 
   const fit = analysis.curve.value.value
   const samples = analysis.samples.value.value

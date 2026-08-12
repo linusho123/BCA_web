@@ -101,7 +101,12 @@ they can check they are current — and put the date in the filename before you 
 **Protocol** — pick a procedure (microplate standard, microplate reduced-sample, test-tube
 standard, test-tube enhanced) and get the working reagent volumes for the plate you are about to
 run. The procedure decides sample volume, reagent volume and working range, so it is chosen once
-and read everywhere.
+and read everywhere. It is saved the moment you choose it, from this page — you do not have to
+visit the analysis page for the choice to stick, and it is still there after a reload. That was
+a real bug until 2026-08-12: the choice reached storage only when the analysis page was opened,
+so a second choice could be shown on screen while the old one was what a reload brought back.
+Because the procedure sets the working range, a stale one flags every sample against the wrong
+band (5–250 µg/mL for the enhanced test-tube protocol against 20–2,000 for microplate standard).
 
 **Dilutions** — the BSA serial dilution plan, from the 2 mg/mL ampule down. Three presets,
 including the two tables from the Pierce manual and the lab's own serial series.
@@ -245,9 +250,9 @@ screen reader, or with reduced motion set loses nothing but convenience.
 | `unit` | node | 509 |
 | `acceptance` | node | 213 scenarios, 15 features |
 | `component` | Chromium | 9 |
-| `acceptance:ui` | Chromium | 92 scenarios, 9 features |
+| `acceptance:ui` | Chromium | 100 scenarios, 10 features |
 
-823 in total, all passing, no skips and no `@todo` tags.
+831 in total, all passing, no skips and no `@todo` tags.
 
 The workflow is spec-first: a `.feature` file exists before the code that satisfies it, and every
 feature carries negative scenarios as well as happy paths. See `AGENTS.md` before changing

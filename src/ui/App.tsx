@@ -11,8 +11,10 @@
  */
 
 import { signal } from '@preact/signals'
+import { useEffect } from 'preact/hooks'
 import { FlaskConical, type LucideIcon, LineChart, TestTubes } from 'lucide-preact'
 import type { ComponentType } from 'preact'
+import * as analysis from '~/state/analysis'
 import { AnalysisPage } from './AnalysisPage'
 import { DilutionPage } from './DilutionPage'
 import { ProtocolPage } from './ProtocolPage'
@@ -50,14 +52,49 @@ function fromHash(): string {
   return PAGES.some((p) => p.id === id) ? id : DEFAULT_PAGE
 }
 
-const current = signal(fromHash())
+/**
+ * Which page is on screen.
+ *
+ * Exported so a harness can put a page up without clicking a tab and waiting for a render. The
+ * app itself only ever sets it from the hash or from a tab click.
+ */
+export const currentPage = signal(fromHash())
 
 browser.addEventListener?.('hashchange', () => {
-  current.value = fromHash()
+  currentPage.value = fromHash()
 })
 
 export function App() {
-  const page = PAGES.find((p) => p.id === current.value) ?? PAGES[2]
+  // The session is written here, in the shell, rather than on the page that hosts each control.
+  //
+  // It used to be written only by the analysis page, and the settings it named were the ones
+  // that page owns — so the promise session-continuity.feature makes for "the settings" was
+  // kept for all of them except the procedure, which is chosen on the protocol page. That one
+  // reached storage late, off the back of the analysis page mounting, and a second choice never
+  // reached it at all: the screen showed the new procedure, the store held the old one, and a
+  // reload silently restored what nobody chose. It is not a cosmetic difference — the procedure
+  // decides the working range every sample is flagged against.
+  //
+  // A second effect on the protocol page would have fixed the procedure and left the same hole
+  // open for the next setting added to a page that has no effect of its own. The shell is the
+  // one component mounted for every page, so the rule "a setting is written when it changes"
+  // can be true here in a way it cannot be anywhere else.
+  //
+  // The deps are the settings themselves, not the pages, so nothing else re-triggers a write:
+  // the reagent calculator's own inputs live in state/planning.ts and are not persisted.
+  useEffect(() => analysis.persist(), [
+    analysis.plateText.value,
+    analysis.sampleNames.value,
+    analysis.standardRegions.value,
+    analysis.sampleAssignments.value,
+    analysis.blankSubtract.value,
+    analysis.fitModel.value,
+    analysis.dilutionFactor.value,
+    analysis.standardsDirection.value,
+    analysis.procedure.value,
+  ])
+
+  const page = PAGES.find((p) => p.id === currentPage.value) ?? PAGES[2]
   if (page === undefined) return null
   const { Component } = page
 
@@ -66,7 +103,7 @@ export function App() {
       <nav aria-label="Sections" class="border-b border-slate-200">
         <ul class="mx-auto flex max-w-6xl gap-1 px-6">
           {PAGES.map(({ id, label, Icon }) => {
-            const active = id === current.value
+            const active = id === currentPage.value
             return (
               <li key={id}>
                 <a
@@ -81,7 +118,7 @@ export function App() {
                   onClick={(e) => {
                     e.preventDefault()
                     if (browser.location) browser.location.hash = `#/${id}`
-                    current.value = id
+                    currentPage.value = id
                   }}
                 >
                   <Icon size={15} aria-hidden={true} />

@@ -45,6 +45,15 @@ build so that a sanctioned flip and a silent weakening do not leave the same his
 | The layout and settings are restored after a reload | `features/analysis/session-continuity.feature` | Still passes as written — a reload restores the layout, and under ruling 7 a same-tab reload restores the numbers too, so nothing is "new" and nothing clears. Recorded because ruling 9 makes the scenario's *value* conditional on the tab surviving. | 9 |
 | Wells are painted one click at a time | `features/analysis/plate-paint-drag.feature`, `src/ui/PlateGrid.tsx` | **Ruled 2026-08-12, user's call.** A drag across the grid now paints every well the pointer *enters* — start well included, wells steered around excluded. This narrows the "Selecting wells" fence below rather than reopening it: *drag a rectangle* stays rejected, and the objection that killed it (a skipped bad well needs a second drag) is exactly what wells-entered answers. Nothing already green changes: click-to-paint, Enter-to-paint, erase and the disarmed state all keep their scenarios and their meaning, because the drag decides *where* and the palette still decides *what*. What changes is that the gesture the winning argument was named after — "painting across a row" — stops being a silent no-op. | Selecting wells |
 
+| The settings survive a reload | `features/analysis/settings-persistence.feature`, `src/ui/App.tsx`, `src/ui/AnalysisPage.tsx` | **Ruled 2026-08-12, user's call.** `session-continuity.feature` promised this for "the settings" and kept it for the ones set on the analysis page, because that page owned the write. The procedure is set on the protocol page, so it reached storage late — off the back of the analysis page mounting — and a second choice never reached it at all. The writer moves to the shell, where it covers every page and every setting. Nothing already green changes meaning: the same nine settings are written, to the same store, under the same rule about what may be in it. What changes is who writes, and the answer stops depending on which page you happened to visit. | New |
+
+Harness note, not a scenario: `features/steps/ui/support.tsx` now mounts `App` rather than
+`AnalysisPage`. That is a correctness requirement, not tidiness — the persist effect lives in the
+shell, so a harness mounting the page alone runs an app with nothing writing to storage, and every
+reload scenario would assert against a store the app under test never filled. `plate-grid.feature`
+caught this immediately when the effect moved. The mount helper sets `currentPage` before
+rendering, because these step files read the document synchronously after `mount()` returns.
+
 Harness note, not a scenario: `features/steps/ui/support.tsx:75` uses `plate-input` to detect
 whether the app is mounted, and `features/steps/ui/curve-plot.steps.tsx:134` parks the mouse
 pointer on it. Ruling 8 keeps the paste box, so both survive. Removing it later breaks two step

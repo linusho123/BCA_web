@@ -16,12 +16,13 @@ directory; a scenario that cannot pass yet does not get written as a scenario.
 | `component` | Chromium | one rendered component |
 | `acceptance:ui` | Chromium | the whole page, focus and all |
 
-The split is in `vite.config.ts`, not in how the features are written. Fifteen of the twenty-four
-are claims about the assay and run in node in milliseconds. Nine are claims about a rendered
+The split is in `vite.config.ts`, not in how the features are written. Fifteen of the twenty-five
+are claims about the assay and run in node in milliseconds. Ten are claims about a rendered
 page — that focus reaches what hover reaches, that a failed stage leaves its neighbours drawn,
 that a restored session asks for a plate rather than listing what is missing, that a pointer on a
 crowded mark reads back that mark, that the standards table names the tube each well was read
-against, that a button held down across a row paints every well it enters — and those cannot be
+against, that a button held down across a row paints every well it enters, that a setting chosen on
+one page is stored from that page — and those cannot be
 checked without a browser, so they run in one. A scenario can move between the two without being
 rewritten.
 
@@ -51,6 +52,7 @@ rewritten.
 | **`analysis/plate-grid.feature`** | 9 | the 96 wells, typed into | scoped 2026-08-11 |
 | **`analysis/plate-layout-painting.feature`** | 11 | which wells hold which sample | scoped 2026-08-11 |
 | **`analysis/plate-paint-drag.feature`** | 8 | painting a run of wells in one gesture | ruled 2026-08-12 |
+| **`analysis/settings-persistence.feature`** | 8 | a setting is stored from whichever page set it | ruled 2026-08-12 |
 | **`analysis/plate-grid-from-file.feature`** | 12 | reading a plate out of a file | scoped 2026-08-11 |
 | **`analysis/standards-direction.feature`** | 8 | which end of the row the series starts at | scoped 2026-08-12 |
 
@@ -63,6 +65,12 @@ in `spec/OUT-OF-SCOPE.md`. `standards-direction.feature` came later still, from 
 pipettes its series the other way; its header carries its own reasoning. `plate-paint-drag.feature`
 is later again and is the one file here that amends a fence rather than filling a gap: the
 sanctioned-changes table records why, and the fence entry it narrows is "Selecting wells".
+`settings-persistence.feature` is later still and came from a defect rather than from a request:
+`session-continuity.feature` promised that the settings survive a reload and was green, because
+every setting it named was set on the page that did the writing. The procedure was not. That is
+worth reading as a lesson about scope rather than about persistence — a promise made for a
+category is only kept for the members the mechanism happens to reach, and the gap is invisible
+from inside the file that made the promise.
 
 F10 is the one that did not survive. It specified a Quarto site with Shinylive blocks: a purity
 constraint so the core could run under Pyodide, a generator that inlined it into each `.qmd`, and

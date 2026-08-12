@@ -18,7 +18,7 @@ import { After, Before } from 'quickpickle'
 import { cleanup, render } from 'vitest-browser-preact'
 import { REFERENCE_ABSORBANCES } from '~/domain/reference'
 import * as analysis from '~/state/analysis'
-import { AnalysisPage } from '~/ui/AnalysisPage'
+import { App, currentPage } from '~/ui/App'
 import type { World } from '../../support/world'
 
 /** The names the workflow feature uses throughout. */
@@ -63,15 +63,25 @@ After(async (world: World) => {
 // --- rendering -------------------------------------------------------------
 
 /**
- * Render the analysis page, replacing whatever was rendered before it.
+ * Render the app, showing the analysis page, replacing whatever was rendered before it.
  *
  * `cleanup` first rather than rendering a second copy beside the first: several scenarios render
  * in a Given and again in a When, and two live trees would leave every query returning the older
  * one's elements.
+ *
+ * The shell is mounted rather than `AnalysisPage` on its own, and that is not incidental. The
+ * session is written by an effect in the shell, so a harness that mounts only the page runs an
+ * app with nothing writing to storage — every reload scenario would then be asserting against a
+ * store the app under test never filled. Mounting the fragment is what let the procedure defect
+ * live in a green suite; this is the same blind spot pointing the other way.
  */
 export function mount(): void {
   cleanup()
-  render(<AnalysisPage />)
+  // Set before rendering, not after: these step files read the document the moment `mount`
+  // returns, and a signal written after the render only lands on the next one. A scenario that
+  // followed one which navigated away would otherwise mount the wrong page and find no grid.
+  currentPage.value = 'analysis'
+  render(<App />)
 }
 
 /** Render only if nothing is on screen — for a When that follows a Given which already did. */
