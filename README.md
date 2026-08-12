@@ -19,7 +19,30 @@ npm run dev       # http://localhost:5173
 npm run verify    # the gate: features lint, eslint, tsc, and every test
 ```
 
-Node `>=22.12.0`.
+Node `>=22.12.0`. `npm run dev` opens a browser; it will not appear on its own otherwise.
+
+## Deploying it
+
+`npm run build` writes `dist/` — an `index.html` and two files, about 700 KB. There is no server
+and no backend, so any static host will serve it. Assets are referenced relatively (`base: './'`
+in `vite.config.ts`), so it runs from a sub-path as happily as from a domain root, and routing is
+by hash, so the host needs no rewrite rules.
+
+`.github/workflows/deploy.yml` publishes to GitHub Pages on every push to `master` or `main`. It
+runs `npm run verify` first and the deploy depends on it, so a red suite does not become a
+published site. To turn it on, once:
+
+```sh
+gh repo create BCA_web --private --source=. --push   # or add a remote by hand and push
+gh api -X POST repos/:owner/BCA_web/pages -f build_type=workflow
+```
+
+Or in the web UI: **Settings → Pages → Source → GitHub Actions**. The workflow needs no secret —
+it deploys through `id-token`, so there is nothing to rotate.
+
+One thing worth knowing before sharing the URL: the whole calculation runs in the browser, so
+publishing the app does not publish anyone's data. Absorbances never leave the machine that
+entered them, and are held only for the tab.
 
 ## The three pages
 

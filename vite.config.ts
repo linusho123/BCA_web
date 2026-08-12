@@ -21,6 +21,20 @@ const UI_FEATURES = [
 ] as const
 
 export default defineConfig({
+  /**
+   * Assets are referenced relatively, so the built site runs from any path.
+   *
+   * The default is `/`, which emits `/assets/index-xxxx.js` and works only when the site is at
+   * the root of a domain. A GitHub Pages project site is not: it is served from
+   * `user.github.io/BCA_web/`, where an absolute asset path resolves to the wrong origin
+   * entirely and the page loads blank with no error worth reading.
+   *
+   * Relative works here because routing is by hash — `#/analysis` never leaves index.html — so
+   * there are no deep URLs for a static host to rewrite. An app with real paths would need the
+   * base to name the sub-path instead, and the host to fall back to index.html.
+   */
+  base: './',
+
   plugins: [preact(), tailwindcss(), quickpickle()],
 
   resolve: {

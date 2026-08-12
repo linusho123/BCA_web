@@ -1,0 +1,69 @@
+# Build, verify, and publish to GitHub Pages.
+#
+# The gate runs before the deploy and the deploy needs it, so a red suite does not become a
+# published site. That ordering is the point of the file: this app's whole claim is that a
+# result computed here reconciles with the workbook, and shipping an unverified build would
+# spend that claim to save four minutes.
+#
+# Nothing here needs a secret. Pages deploys through the id-token permission below rather than
+# a personal token, so there is nothing to rotate and nothing to leak.
+
+name: Deploy
+
+on:
+  push:
+    # master is this repo's branch today; main is included so that renaming the default branch,
+    # or pushing to a fresh GitHub repo that defaults to main, does not silently stop deploying.
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and never cancel one that is running: a half-finished Pages deploy
+# leaves the site serving a mix of two builds.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # package.json requires >=22.12.0.
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Two of the four test projects run in a real Chromium. Without this they fail to launch
+      # rather than being skipped, which is the correct behaviour and a confusing log line.
+      - run: npx playwright install --with-deps chromium
+
+      - name: Gate
+        run: npm run verify
+
+      - name: Build
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Publish
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
