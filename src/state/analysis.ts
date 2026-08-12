@@ -457,14 +457,13 @@ export function correctWell(well: string, value: number): void {
   typeIntoWell(well, String(value))
 }
 
-/** Forget the plate and the layout, keeping the settings. Used by the "start over" control. */
 /**
  * Start over: no plate, no layout, and the settings back where they started.
  *
- * The settings are cleared too, and that is the part worth explaining. The worked example
- * carries its own — a 400 ug target in a 1000 uL lane with no dye, and a dilution factor of 2,
- * which is the workbook's 1 in 2 on its unknowns. Those are right for the workbook and wrong
- * for the next plate. Left behind, a dilution factor of 2 would halve every concentration
+ * The settings are cleared too, and that is the part worth explaining. Anything chosen for one
+ * plate — a procedure, a fit model, which end of the row the standards start at, a dilution
+ * factor entered for a batch that was diluted further by hand — is wrong for the next plate by
+ * default rather than right. Left behind, a dilution factor of 2 would halve every concentration
  * reported afterwards and look entirely reasonable doing it.
  *
  * Restored from `DEFAULT_SESSION` rather than from literals so that the defaults live in one
