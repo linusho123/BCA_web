@@ -16,13 +16,14 @@ directory; a scenario that cannot pass yet does not get written as a scenario.
 | `component` | Chromium | one rendered component |
 | `acceptance:ui` | Chromium | the whole page, focus and all |
 
-The split is in `vite.config.ts`, not in how the features are written. Fifteen of the twenty-three
-are claims about the assay and run in node in milliseconds. Eight are claims about a rendered
+The split is in `vite.config.ts`, not in how the features are written. Fifteen of the twenty-four
+are claims about the assay and run in node in milliseconds. Nine are claims about a rendered
 page — that focus reaches what hover reaches, that a failed stage leaves its neighbours drawn,
 that a restored session asks for a plate rather than listing what is missing, that a pointer on a
 crowded mark reads back that mark, that the standards table names the tube each well was read
-against — and those cannot be checked without a browser, so they run in one. A scenario can
-move between the two without being rewritten.
+against, that a button held down across a row paints every well it enters — and those cannot be
+checked without a browser, so they run in one. A scenario can move between the two without being
+rewritten.
 
 ## The map
 
@@ -49,6 +50,7 @@ move between the two without being rewritten.
 | **`analysis/curve-plot-crowding.feature`** | 2 | which mark the pointer is asking about | split from presentation |
 | **`analysis/plate-grid.feature`** | 9 | the 96 wells, typed into | scoped 2026-08-11 |
 | **`analysis/plate-layout-painting.feature`** | 11 | which wells hold which sample | scoped 2026-08-11 |
+| **`analysis/plate-paint-drag.feature`** | 8 | painting a run of wells in one gesture | ruled 2026-08-12 |
 | **`analysis/plate-grid-from-file.feature`** | 12 | reading a plate out of a file | scoped 2026-08-11 |
 | **`analysis/standards-direction.feature`** | 8 | which end of the row the series starts at | scoped 2026-08-12 |
 
@@ -58,7 +60,9 @@ document it came from. Of the browser features, three came from a `/scope`
 interview rather than from the Quarto project — the grid, the painting and the file import — and
 their scope fence, what was deliberately left out and which rejected options were considered, is
 in `spec/OUT-OF-SCOPE.md`. `standards-direction.feature` came later still, from a bench that
-pipettes its series the other way; its header carries its own reasoning.
+pipettes its series the other way; its header carries its own reasoning. `plate-paint-drag.feature`
+is later again and is the one file here that amends a fence rather than filling a gap: the
+sanctioned-changes table records why, and the fence entry it narrows is "Selecting wells".
 
 F10 is the one that did not survive. It specified a Quarto site with Shinylive blocks: a purity
 constraint so the core could run under Pyodide, a generator that inlined it into each `.qmd`, and

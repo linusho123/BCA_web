@@ -43,6 +43,7 @@ build so that a sanctioned flip and a silent weakening do not leave the same his
 | Running an analysis sends nothing over the network | `features/analysis/analysis-workflow.feature` | **Done 2026-08-12.** The step is now *no assay value is written to storage that outlives the tab*, and AC1 reads *sent or kept past the tab*. The watcher wraps localStorage, which is exactly the store that survives a tab closing, so the assertion was already right — the wording was what had stopped being. A cross-reference to `plate-grid.feature` says where the plate is held and why. | 7 |
 | Wells nobody assigned are left out without comment | `plate-layout-painting.feature`, `src/domain/plate.ts` | **Done 2026-08-12.** The plate-wide `NON_NUMERIC_CELL` INFO note listing every empty well is removed; the empty well worth reporting is one inside an assigned region, raised by `readWells` and named against its sample by `mapSamples`. One unit test flipped (`summarises empty wells into one line`), replaced by `says nothing at all about an un-plated well`. The scenario's step was strengthened first and failed on exactly the six wells the note named — the weak version had been passing while the behaviour was wrong. | 3 |
 | The layout and settings are restored after a reload | `features/analysis/session-continuity.feature` | Still passes as written — a reload restores the layout, and under ruling 7 a same-tab reload restores the numbers too, so nothing is "new" and nothing clears. Recorded because ruling 9 makes the scenario's *value* conditional on the tab surviving. | 9 |
+| Wells are painted one click at a time | `features/analysis/plate-paint-drag.feature`, `src/ui/PlateGrid.tsx` | **Ruled 2026-08-12, user's call.** A drag across the grid now paints every well the pointer *enters* — start well included, wells steered around excluded. This narrows the "Selecting wells" fence below rather than reopening it: *drag a rectangle* stays rejected, and the objection that killed it (a skipped bad well needs a second drag) is exactly what wells-entered answers. Nothing already green changes: click-to-paint, Enter-to-paint, erase and the disarmed state all keep their scenarios and their meaning, because the drag decides *where* and the palette still decides *what*. What changes is that the gesture the winning argument was named after — "painting across a row" — stops being a silent no-op. | Selecting wells |
 
 Harness note, not a scenario: `features/steps/ui/support.tsx:75` uses `plate-input` to detect
 whether the app is mounted, and `features/steps/ui/curve-plot.steps.tsx:134` parks the mouse
@@ -65,7 +66,12 @@ real missing work; *keep today's info note* rejected because a 96-well grid make
 
 **Selecting wells** — *drag a rectangle* rejected because a skipped bad well needs a second
 drag; *click one well at a time* rejected as slower than painting across a row. Painting won on
-laying out a whole plate without typing a name twice.
+laying out a whole plate without typing a name twice. Amended 2026-08-12: what shipped was
+click-per-well, so "painting across a row" — the phrase the winner was argued on — was the one
+gesture the grid did not have. A drag now paints the wells it *enters*, which is neither of the
+two rejected options: not a rectangle, and not one click per well. The rectangle's own objection
+is what picks between them, since a well you steer around is a well you never entered. See the
+sanctioned-changes table and `features/analysis/plate-paint-drag.feature`.
 
 **Standards** — *editable per well* and *paint each concentration separately* both rejected;
 nine paint passes for a series that never varies, against zero for plate order.

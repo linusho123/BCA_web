@@ -18,6 +18,7 @@ const UI_FEATURES = [
   'features/analysis/curve-plot-crowding.feature',
   'features/analysis/plate-grid.feature',
   'features/analysis/plate-layout-painting.feature',
+  'features/analysis/plate-paint-drag.feature',
   'features/analysis/plate-grid-from-file.feature',
   'features/analysis/standards-direction.feature',
 ] as const

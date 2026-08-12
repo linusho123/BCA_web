@@ -114,6 +114,24 @@ touches nothing above it.
 Exports are CSV and JSON, built as a Blob and downloaded by the browser — the same promise as
 above, restated as a refusal.
 
+## Saying which wells hold what
+
+The grid is 96 real text boxes, so it starts out doing what a text box does: a click puts the
+cursor in a well, and typing changes the reading. Painting has to be switched on, using the row of
+buttons above the grid — the standards, one button per sample name you have typed, and an erase
+entry. "Type values" switches it back off, and it starts off.
+
+With a name selected, **hold the button down and drag across a row** to paint every well the
+pointer goes over. Wells you steer around are left alone, so a row with one bad well is still one
+gesture: dip below the row and back up. A single click paints a single well, and `Enter` paints
+the well the cursor is in, which is how the grid is painted from the keyboard alone. Painting over
+a well moves it to the new name rather than adding a second one, so a mistake is fixed by painting
+it again — there is no undo to reach for. Erase takes a well out of every assignment and leaves
+its number where it is.
+
+A finger does not paint. Dragging on a touch screen scrolls the plate, which is wider than a
+phone; tap still paints one well.
+
 ## Which end of the row the standards start at
 
 The app assumes your standard row is pipetted the way this bench pipettes it: the most
@@ -227,9 +245,9 @@ screen reader, or with reduced motion set loses nothing but convenience.
 | `unit` | node | 509 |
 | `acceptance` | node | 213 scenarios, 15 features |
 | `component` | Chromium | 9 |
-| `acceptance:ui` | Chromium | 84 scenarios, 8 features |
+| `acceptance:ui` | Chromium | 92 scenarios, 9 features |
 
-815 in total, all passing, no skips and no `@todo` tags.
+823 in total, all passing, no skips and no `@todo` tags.
 
 The workflow is spec-first: a `.feature` file exists before the code that satisfies it, and every
 feature carries negative scenarios as well as happy paths. See `AGENTS.md` before changing

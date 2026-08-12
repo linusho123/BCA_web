@@ -17,11 +17,21 @@
  * someone typing "0.132".
  */
 
+import { useRef } from 'preact/hooks'
 import { PLATE_COLUMNS, PLATE_ROWS } from '~/domain/constants'
 import { wellValue } from '~/domain/plate'
 import * as analysis from '~/state/analysis'
 
 export function PlateGrid() {
+  /**
+   * Whether a painting drag is under way — a ref, not a signal, and not state.
+   *
+   * Nothing on the page renders differently while the button is down, so a signal here would
+   * schedule 96 renders across a sweep to change something no one can see. It also has to be
+   * readable synchronously by the handler of the very next event, and a re-render between two
+   * pointer events is not something a drag can wait for.
+   */
+  const dragging = useRef(false)
   const grid = analysis.grid.value
   const data = analysis.plate.value.value
   const assigned = analysis.assignmentOf.value
@@ -42,7 +52,15 @@ export function PlateGrid() {
     t.kind === target.kind && (t.kind !== 'sample' || t.name === (target as { name?: string }).name)
 
   return (
-    <div class="overflow-x-auto">
+    <div
+      class="overflow-x-auto"
+      // The ordinary end of a drag, caught here rather than on each well so that a release over
+      // a gap between wells, over the column headers, or anywhere else inside the grid still
+      // ends it. The pointerenter guard above is the backstop for releases outside it entirely.
+      onPointerUp={() => {
+        dragging.current = false
+      }}
+    >
       <div
         role="radiogroup"
         aria-label="What a click on a well means"
@@ -119,6 +137,30 @@ export function PlateGrid() {
                       }
                       onClick={() => {
                         if (armed) analysis.paintWells([well])
+                      }}
+                      onPointerDown={(e) => {
+                        // Mouse, trackpad and pen only. A finger dragging across the plate is
+                        // scrolling it — the grid is wider than a phone — and there is no hover
+                        // between press and release to paint with. Tap still paints, through the
+                        // click handler above, which fires for touch like any other pointer.
+                        if (!armed || e.pointerType === 'touch') return
+                        dragging.current = true
+                        // The starting well is painted on the press rather than left to the
+                        // click, because a drag has no click on it: press on C1, release on C3,
+                        // and the click lands on their common ancestor. Painting twice when the
+                        // gesture is a plain click costs nothing — paintWells is a move into a
+                        // set, so the second one finds the well already there.
+                        analysis.paintWells([well])
+                      }}
+                      onPointerEnter={(e) => {
+                        // `buttons` rather than a release event, because the release that ends a
+                        // drag is not always delivered: let go past the edge of the window and
+                        // this handler is the first thing that hears anything at all. Reading the
+                        // state the browser reports means a gesture cannot stay armed after the
+                        // button is up, whether or not anyone told us it went up.
+                        if (dragging.current && e.buttons === 0) dragging.current = false
+                        if (!armed || !dragging.current) return
+                        analysis.paintWells([well])
                       }}
                       onKeyDown={(e) => {
                         // Enter rather than space: space is a character in a number field, and a
