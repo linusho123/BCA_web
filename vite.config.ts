@@ -15,6 +15,7 @@ const UI_FEATURES = [
   'features/analysis/analysis-workflow.feature',
   'features/analysis/session-continuity.feature',
   'features/analysis/curve-plot-presentation.feature',
+  'features/analysis/plate-grid.feature',
 ] as const
 
 export default defineConfig({

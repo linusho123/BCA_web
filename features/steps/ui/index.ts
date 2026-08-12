@@ -12,3 +12,4 @@
 import './support'
 import './analysis.steps'
 import './curve-plot.steps'
+import './plate-grid.steps'

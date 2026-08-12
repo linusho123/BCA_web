@@ -23,7 +23,7 @@ import {
 import { type CurveFit, fitCurve } from '~/domain/curve'
 import { IssueCode, issue, Severity, Stage } from '~/domain/errors'
 import { defaultLayout, checkOverlap, mapSamples, mapStandards } from '~/domain/layout'
-import { EMPTY_PLATE, parsePlate, type PlateData } from '~/domain/plate'
+import { EMPTY_PLATE, parsePlate, rawGrid, writeWell, type PlateData } from '~/domain/plate'
 import { curvePlot, type CurvePlot } from '~/domain/plot'
 import {
   REFERENCE_DESIRED_PROTEIN_UG,
@@ -40,7 +40,14 @@ import {
   type SampleResult,
 } from '~/domain/samples'
 import type { StandardLevel } from '~/domain/curve'
-import { DEFAULT_SESSION, loadSession, saveSession, type StoredSession } from '~/schemas/session'
+import {
+  DEFAULT_SESSION,
+  loadPlateText,
+  loadSession,
+  savePlateText,
+  saveSession,
+  type StoredSession,
+} from '~/schemas/session'
 import { validatePlateText } from '~/schemas/upload'
 import { collect, failed, staged, type Staged, type StagedIssue } from './stage'
 
@@ -48,8 +55,15 @@ import { collect, failed, staged, type Staged, type StagedIssue } from './stage'
 
 const restored: StoredSession = loadSession()
 
-/** The pasted reader grid. Never persisted — it is the one thing that came off an instrument. */
-export const plateText = signal('')
+/**
+ * The reader grid, however it got here — pasted, typed into a well, or read from a file.
+ *
+ * Held for the tab and no longer. It is the one thing here that came off an instrument, and
+ * `src/schemas/session.ts` explains why that earns its own storage rather than riding along
+ * with the session: a reload must not cost a researcher ninety-six hand-typed wells, and
+ * tomorrow morning's user of a shared laptop must not find yesterday's plate waiting.
+ */
+export const plateText = signal(loadPlateText())
 
 export const sampleNames = signal<readonly string[]>(restored.sampleNames)
 export const standardRegions = signal<readonly string[]>(restored.standardRegions)
@@ -81,6 +95,14 @@ export const procedure = signal(restored.procedure)
  * session in progress — it is the shape of the next one, waiting for its numbers.
  */
 export const started = computed(() => plateText.value.trim() !== '')
+
+/**
+ * The plate as 8 by 12 cells of raw text — what the grid on screen renders.
+ *
+ * Derived rather than held, so the grid, the paste box and an import cannot disagree about what
+ * is in a well. There is one plate here, and it is `plateText`.
+ */
+export const grid = computed(() => rawGrid(plateText.value))
 
 // --- stages ----------------------------------------------------------------
 
@@ -239,30 +261,34 @@ export function loadWorkedExample(): void {
   includeDye.value = false
 }
 
-/** Overwrite one well, leaving the rest of the pasted grid as it was. */
+/**
+ * Put what a person typed into one well, exactly as they typed it.
+ *
+ * The entry stays text all the way to the grid because the grid is an input, not a readout:
+ * "OVRFLW" has to survive to be reported as saturation, and a half-typed "0." has to survive
+ * long enough for the next keystroke. Whether it is a number is `parsePlate`'s question, and it
+ * asks it of the whole grid at once.
+ *
+ * Typing into a well of an empty session seeds the full 8 by 12 — see `writeWell`.
+ */
+export function typeIntoWell(well: string, entry: string): void {
+  plateText.value = writeWell(plateText.value, well, entry)
+}
+
+/**
+ * Overwrite one well with a measured value, leaving the rest of the grid as it was.
+ *
+ * Kept distinct from `typeIntoWell` because the caller here has a number rather than something
+ * a person typed; both land in the same place.
+ */
 export function correctWell(well: string, value: number): void {
-  const match = /^([A-Za-z])(\d{1,2})$/.exec(well.trim())
-  if (!match) return
-  const row = (match[1] as string).toUpperCase()
-  const column = Number(match[2])
-
-  const data = plate.value.value
-  const r = data.rowLabels.indexOf(row)
-  if (r < 0 || column < 1 || column > data.nCols) return
-
-  // Rewritten as text rather than as parsed values, because the pasted grid is the input and
-  // everything else is derived from it. Editing the parsed copy would leave the two disagreeing
-  // the moment anything re-parsed.
-  const grid = data.values.map((cells) => cells.map((cell) => (cell === null ? '-' : String(cell))))
-  const target = grid[r]
-  if (target === undefined) return
-  target[column - 1] = String(value)
-  plateText.value = grid.map((cells) => cells.join('\t')).join('\n')
+  typeIntoWell(well, String(value))
 }
 
 /** Forget the plate and the layout, keeping the settings. Used by the "start over" control. */
 export function reset(): void {
   plateText.value = ''
+  savePlateText('')
   sampleNames.value = []
   standardRegions.value = []
   sampleAssignments.value = []
@@ -294,6 +320,7 @@ export function snapshot(): StoredSession {
 /** Write the session. Called by the app shell on change; safe to call when nothing changed. */
 export function persist(): void {
   saveSession(snapshot())
+  savePlateText(plateText.value)
 }
 
 /** Restore the signals from a stored session. The plate is not among them, by design. */

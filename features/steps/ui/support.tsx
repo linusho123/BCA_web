@@ -39,6 +39,10 @@ const EMPTY_WELL = '-'
 Before(async (world: World) => {
   cleanup()
   storage()?.clear()
+  // The plate is held in sessionStorage, not localStorage, so clearing one does not clear the
+  // other — and a scenario that inherited the previous scenario's plate would pass for the
+  // wrong reason. See src/schemas/session.ts for why the two are kept apart.
+  tabStore()?.clear()
   analysis.restore()
   analysis.plateText.value = ''
 
@@ -343,6 +347,11 @@ export interface StorageWatch {
 
 function storage(): Storage | undefined {
   return (globalThis as { localStorage?: Storage }).localStorage
+}
+
+/** Where the plate is held for the tab. Cleared between scenarios by the `Before` hook. */
+export function tabStore(): Storage | undefined {
+  return (globalThis as { sessionStorage?: Storage }).sessionStorage
 }
 
 export function watchStorage(): StorageWatch {

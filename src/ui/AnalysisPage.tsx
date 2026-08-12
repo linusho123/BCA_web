@@ -20,6 +20,7 @@ import { curveToCsv, loadingToCsv, samplesToCsv, sessionToJson } from '~/domain/
 import * as analysis from '~/state/analysis'
 import { CurveChart } from './chart/CurveChart'
 import { IssuePanel } from './IssuePanel'
+import { PlateGrid } from './PlateGrid'
 import { Table } from './Table'
 import { loadingColumns, sampleColumns, standardColumns } from './columns'
 import { download } from './download'
@@ -29,6 +30,9 @@ export function AnalysisPage() {
   // Persistence is a side effect of the settings changing, not something a save button does.
   // Reading the snapshot inside the effect subscribes it to every signal the snapshot touches.
   useEffect(() => analysis.persist(), [
+    // The plate is in here because it is held for the tab now — typing into a well has to
+    // survive a reload, and nothing else in this list changes when a well is typed into.
+    analysis.plateText.value,
     analysis.sampleNames.value,
     analysis.standardRegions.value,
     analysis.sampleAssignments.value,
@@ -236,6 +240,12 @@ function PlatePanel() {
           onInput={(e) => (analysis.plateText.value = (e.target as HTMLTextAreaElement).value)}
         />
       </label>
+
+      {/*
+        The grid and the paste box are one input, not two. Pasting fills the wells; typing in a
+        well edits the same plate. Whichever a person reaches for, the other shows the result.
+      */}
+      <PlateGrid />
 
       <div class="flex flex-wrap items-end gap-3">
         <TextField

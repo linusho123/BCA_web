@@ -9,6 +9,8 @@ import {
   parsePlate,
   parsePlateCsv,
   wellValue,
+  writeWell,
+  EMPTY_WELL_TOKEN,
 } from './plate'
 import { REFERENCE_ABSORBANCES, referencePlateText } from './reference'
 
@@ -346,5 +348,68 @@ describe('file import', () => {
     const hostile = new Uint8Array(Array.from({ length: 256 }, (_, i) => (i * 37) % 256))
     expect(() => parsePlateCsv(hostile)).not.toThrow()
     expect(parsePlateCsv(hostile).issues.length).toBeGreaterThan(0)
+  })
+})
+
+/** Proves features/analysis/plate-grid.feature. */
+describe('writeWell', () => {
+  const at = (text: string, row: string, col: number) => wellValue(parsePlate(text), row, col)
+
+  it('seeds a whole 8 by 12 plate when there was no grid at all', () => {
+    const data = parsePlate(writeWell('', 'C1', '0.430'))
+    expect(data.nRows).toBe(8)
+    expect(data.nCols).toBe(12)
+    expect(wellValue(data, 'C', 1)).toBe(0.43)
+  })
+
+  it('leaves every other well of a seeded grid empty rather than zero', () => {
+    const data = parsePlate(writeWell('', 'C1', '0.430'))
+    expect(wellValue(data, 'C', 2)).toBeNull()
+    expect(wellValue(data, 'A', 1)).toBeNull()
+    expect(wellValue(data, 'H', 12)).toBeNull()
+  })
+
+  it('replaces one well of an existing grid and disturbs no other', () => {
+    const edited = writeWell(referencePlateText(), 'A3', '0.2705')
+    expect(at(edited, 'A', 3)).toBe(0.2705)
+    expect(at(edited, 'A', 4)).toBe(REFERENCE_ABSORBANCES[3])
+    expect(at(edited, 'C', 1)).toBe(0.43)
+  })
+
+  it('keeps an instrument sentinel verbatim so the overflow issue still fires', () => {
+    // The reason this works on text rather than on parsed values: "OVRFLW" parses to null, so a
+    // round trip through PlateData would turn a saturated read into an empty well.
+    const data = parsePlate(writeWell(referencePlateText(), 'D5', 'OVRFLW'))
+    expect(hasCode(data.issues, IssueCode.OVERFLOW_CELL)).toBe(true)
+  })
+
+  it('accepts a negative reading, which a reader really does report', () => {
+    expect(at(writeWell('', 'D5', '-0.012'), 'D', 5)).toBe(-0.012)
+  })
+
+  it('clears a well when given blank text', () => {
+    const cleared = writeWell(referencePlateText(), 'C1', '   ')
+    expect(at(cleared, 'C', 1)).toBeNull()
+    expect(cleared.split('\n')[2]?.startsWith(EMPTY_WELL_TOKEN)).toBe(true)
+  })
+
+  it('accepts a grid that arrives with row labels on it', () => {
+    // The labels are stripped on the way in and not written back, so an edit lands in the well
+    // the label named rather than one column to the right of it.
+    const labelled = ['A\t1\t2', 'B\t3\t4'].join('\n')
+    const written = writeWell(labelled, 'B2', '9')
+    expect(at(written, 'B', 2)).toBe(9)
+    expect(at(written, 'A', 1)).toBe(1)
+  })
+
+  it('returns the text untouched for a reference that is not a well', () => {
+    expect(writeWell('kept', 'ZZ9', '1')).toBe('kept')
+    expect(writeWell('kept', '', '1')).toBe('kept')
+  })
+
+  it('returns the text untouched for a well outside the plate', () => {
+    expect(writeWell('kept', 'Z1', '1')).toBe('kept')
+    expect(writeWell('kept', 'A13', '1')).toBe('kept')
+    expect(writeWell('kept', 'A0', '1')).toBe('kept')
   })
 })

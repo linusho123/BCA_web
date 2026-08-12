@@ -20,6 +20,7 @@
 
 import { z } from 'zod'
 import { FitModel, Procedure } from '~/domain/constants'
+import { PlateTextSchema } from './upload'
 
 export const STORAGE_KEY = 'bca-web.session.v1'
 
@@ -66,6 +67,49 @@ export const DEFAULT_SESSION: StoredSession = StoredSessionSchema.parse({ versio
  */
 function browserStorage(): Storage | undefined {
   return (globalThis as { localStorage?: Storage }).localStorage
+}
+
+/**
+ * Where the plate is held, which is deliberately not where the session is.
+ *
+ * `sessionStorage` is scoped to the tab: it survives a reload and dies when the tab closes.
+ * That is the whole distinction the promise above turns on. The plate may not be waiting in a
+ * shared laptop's profile tomorrow morning, but somebody who has spent ten minutes typing
+ * ninety-six wells by hand should not lose them to a reload — see
+ * features/analysis/plate-grid.feature, which asserts both halves.
+ *
+ * This is the one thing off an instrument that is written anywhere, and it is the narrowest
+ * place that can hold it.
+ */
+export const PLATE_STORAGE_KEY = 'bca-web.plate.v1'
+
+function tabStorage(): Storage | undefined {
+  return (globalThis as { sessionStorage?: Storage }).sessionStorage
+}
+
+/** Read the plate held for this tab, or nothing at all. Untrusted, so it is validated. */
+export function loadPlateText(storage: Storage | undefined = tabStorage()): string {
+  if (!storage) return ''
+  try {
+    const raw = storage.getItem(PLATE_STORAGE_KEY)
+    if (raw === null) return ''
+    const parsed = PlateTextSchema.safeParse(raw)
+    return parsed.success ? parsed.data : ''
+  } catch {
+    return ''
+  }
+}
+
+/** Hold the plate for this tab. An empty plate clears the slot rather than storing "". */
+export function savePlateText(text: string, storage: Storage | undefined = tabStorage()): void {
+  if (!storage) return
+  try {
+    if (text.trim() === '') storage.removeItem(PLATE_STORAGE_KEY)
+    else storage.setItem(PLATE_STORAGE_KEY, text)
+  } catch {
+    // Quota, or storage disabled. Losing the held plate costs a retype; throwing here would
+    // cost the analysis on screen.
+  }
 }
 
 /** Read the stored session, or the defaults if there is nothing usable there. */

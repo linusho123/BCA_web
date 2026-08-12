@@ -74,6 +74,72 @@ export const EMPTY_PLATE: PlateData = Object.freeze({
   issues: [],
 })
 
+/** What an un-plated well is written as. Matches what the readers in this lab emit. */
+export const EMPTY_WELL_TOKEN = '-'
+
+/**
+ * The grid as 8 by 12 cells of raw text, whatever shape the text arrived in.
+ *
+ * What the grid on screen renders, and what `writeWell` edits. Cells hold what a person typed
+ * rather than what it parses to, so a saturated well still reads "OVRFLW" in the box it was
+ * typed into, and a half-finished "0." survives until the next keystroke.
+ *
+ * An un-plated well comes back as the empty string rather than as `EMPTY_WELL_TOKEN`. The token
+ * is how an empty well is *written* so the exported block stays rectangular; a box on screen
+ * showing a dash would be claiming something was entered there.
+ */
+export function rawGrid(text: string): string[][] {
+  const lines = text
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+  const { rows } = stripLabels(lines.map(splitRow))
+
+  return PLATE_ROWS.map((_row, rIndex) =>
+    PLATE_COLUMNS.map((_col, cIndex) => {
+      const cell = rows[rIndex]?.[cIndex]
+      if (cell === undefined || cell === '' || cell === EMPTY_WELL_TOKEN) return ''
+      return cell
+    }),
+  )
+}
+
+/**
+ * Write one well back into the pasted grid, returning the new grid text.
+ *
+ * The inverse of `parsePlate`, and it lives here because it needs the same private knowledge of
+ * how a row splits and where labels sit. It works on the *text* rather than on `PlateData` for
+ * one reason: a cell holding "OVRFLW" parses to null, so a round trip through the parsed grid
+ * would silently turn a saturated reading into an empty well and lose the issue that says so.
+ * What a person typed is kept verbatim until something asks it for a number.
+ *
+ * An empty grid is seeded to the full 8 by 12 rather than growing to fit the well written. The
+ * grid on screen is always a whole plate — a researcher typing into D5 first has not made a
+ * four-row plate, they have made one entry in a 96-well one.
+ *
+ * A well outside the plate, or a reference that is not a well at all, returns the text
+ * unchanged. There is no well to write to and nothing to report; the caller asked for a cell
+ * that does not exist.
+ */
+export function writeWell(text: string, well: string, raw: string): string {
+  const match = /^([A-Za-z])(\d{1,2})$/.exec(well.trim())
+  if (!match) return text
+
+  const rowLetter = (match[1] as string).toUpperCase()
+  const r = (PLATE_ROWS as readonly string[]).indexOf(rowLetter)
+  const c = Number(match[2]) - 1
+  if (r < 0 || c < 0 || c >= PLATE_COLUMNS.length) return text
+
+  const grid = rawGrid(text).map((cells) =>
+    cells.map((cell) => (cell === '' ? EMPTY_WELL_TOKEN : cell)),
+  )
+
+  const entry = raw.trim()
+  ;(grid[r] as string[])[c] = entry === '' ? EMPTY_WELL_TOKEN : entry
+
+  return grid.map((cells) => cells.join('\t')).join('\n')
+}
+
 function makePlateData(
   values: ReadonlyArray<ReadonlyArray<number | null>>,
   nRows: number,
