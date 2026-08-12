@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Pierce BCA Protein Assay planner, standard curve and loading calculator — runs entirely in the browser.",
+  "description": "Pierce BCA Protein Assay planner, standard curve and loading calculator \u2014 runs entirely in the browser.",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "vite --open",
     "build": "tsc --noEmit && vite build",
+    "build:standalone": "npm run build && node scripts/standalone.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

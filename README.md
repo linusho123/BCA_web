@@ -44,6 +44,25 @@ One thing worth knowing before sharing the URL: the whole calculation runs in th
 publishing the app does not publish anyone's data. Absorbances never leave the machine that
 entered them, and are held only for the tab.
 
+### Sharing it with people who will not use a terminal
+
+Send them the URL. Nothing to install, works on any machine, and everyone is on the current
+version the moment it is pushed. That is the right answer for almost everybody.
+
+For anyone who needs it without a network — a bench laptop, a shared instrument PC, or a copy
+of the exact version used for a figure — `npm run build:standalone` writes
+`dist/bca-web.html`: the whole app, about 700 KB, in one file. Email it, drop it on a USB stick,
+put it on the shared drive. They **double-click it**; there is no server, no install and no
+terminal. Verified working from `file://`, including the worked example, painting, and the
+dilution and protocol pages.
+
+The deploy publishes that file too, so once the site is up it can be downloaded from
+`<site-url>/bca-web.html` rather than emailed around.
+
+The trade-off is the obvious one: a downloaded copy is frozen. Someone using a file from March
+is using March's arithmetic. If people are going to keep copies, tell them where the URL is so
+they can check they are current.
+
 ## The three pages
 
 **Protocol** — pick a procedure (microplate standard, microplate reduced-sample, test-tube

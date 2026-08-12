@@ -50,8 +50,11 @@ jobs:
       - name: Gate
         run: npm run verify
 
+      # build:standalone runs the ordinary build and then folds it into one file, so dist/
+      # carries both the site and a downloadable copy at /bca-web.html for anyone who needs
+      # the app on a bench laptop with no network.
       - name: Build
-        run: npm run build
+        run: npm run build:standalone
 
       - uses: actions/upload-pages-artifact@v3
         with:
