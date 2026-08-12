@@ -336,7 +336,6 @@ export function parsePlate(text: string, options: ParsePlateOptions = {}): Plate
   const rowLabels = labels.length > 0 ? labels : defaultRowLabels(nRows)
 
   const values: Array<Array<number | null>> = []
-  const blankWells: string[] = []
   let readable = 0
   rows.forEach((row, rIndex) => {
     const parsed: Array<number | null> = []
@@ -345,30 +344,20 @@ export function parsePlate(text: string, options: ParsePlateOptions = {}): Plate
       const well = `${labelFor(rowLabels, rIndex)}${cIndex + 1}`
       const outcome = parseCell(raw, well)
       if (outcome.issue) issues.push(outcome.issue)
-      if (outcome.blank) blankWells.push(well)
       if (outcome.value !== null) readable += 1
       parsed.push(outcome.value)
     }
     values.push(parsed)
   })
 
-  // Un-plated wells are summarised into one line rather than named individually. Half a plate
-  // is routinely left empty, and 48 separate warnings saying "this well is empty" bury the two
-  // that say something — a saturated detector, a cell that is not a number — under a scroll.
-  // Saturation and unreadable text are still named per well, because those are news.
-  if (blankWells.length > 0) {
-    const shown = blankWells.slice(0, 6).join(', ')
-    const rest = blankWells.length - 6
-    issues.push(
-      issue(
-        IssueCode.NON_NUMERIC_CELL,
-        Severity.INFO,
-        `${blankWells.length} well(s) hold no measurement: ${shown}${rest > 0 ? `, and ${rest} more` : ''}`,
-        'text',
-        { count: blankWells.length, wells: blankWells.join(',') },
-      ),
-    )
-  }
+  // An un-plated well is not reported here, and that is a deliberate change from summarising
+  // them into one line. The grid shows all 96 wells whether or not they hold anything, so a
+  // note counting the empty ones is on every plate this app will ever see — permanent, since
+  // most of a plate is normally empty, and unactionable, since nobody left those wells empty
+  // by mistake. The empty well worth reporting is one inside a region somebody assigned, which
+  // is work they declared and did not do; `mapSamples` and `readWells` raise that, naming the
+  // sample it belongs to. Saturation and unreadable text are still named per well here, because
+  // those are news about a well someone did plate.
 
   if (nRows !== expectedRows || nCols !== expectedCols) {
     issues.push(

@@ -551,6 +551,10 @@ export function mapSamples(
     // those would put a permanent complaint on every plate, since 96 wells always exist and
     // most are deliberately unused. But a well someone said held this sample, holding nothing,
     // means the mean below is over fewer replicates than the layout claims.
+    //
+    // This says what `readWells` above does not, rather than saying it again: which sample is
+    // short, and by how much. `readWells` names the wells; naming them twice would be the
+    // duplication this app spent a ruling removing.
     const blank = parsed.wells.filter((_well, i) => read.values[i] === null)
     if (blank.length > 0) {
       const measured = parsed.wells.length - blank.length
@@ -558,8 +562,7 @@ export function mapSamples(
         issue(
           IssueCode.NON_NUMERIC_CELL,
           Severity.WARN,
-          `${label}: well(s) ${blank.join(', ')} hold no measurement, so it is averaged over ` +
-            `${measured} of ${parsed.wells.length} wells`,
+          `${label} is averaged over ${measured} of its ${parsed.wells.length} wells`,
           field,
           { sample: label, wells: blank.join(',') },
         ),

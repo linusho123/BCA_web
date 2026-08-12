@@ -98,7 +98,7 @@ Feature: Painting which wells hold which sample
     Given the workbook's plate with well "C2" holding no measurement
     When wells "C1:C3" are painted as "MCF7"
     Then an issue at warn severity names well "C2"
-    And the issue names "MCF7" as the sample it belongs to
+    And an issue says "MCF7" was averaged over 2 of its 3 wells
     And "MCF7" reports a concentration from 2 wells
 
   # AC7 — the safety rule, applied to the path that makes it matter

@@ -177,16 +177,21 @@ describe('cells that are not measurements', () => {
     },
   )
 
-  it('summarises empty wells into one line rather than one per well', () => {
-    // Half a plate is routinely left empty. Forty-odd separate "this well is empty" warnings
-    // bury the one that says the detector saturated.
+  it('says nothing at all about an un-plated well', () => {
+    // The workbook's plate has 24 readings in it and 72 empty wells, which is what a plate
+    // normally looks like. An earlier version summarised those 72 into one note; the grid on
+    // screen now shows all 96 wells regardless, so that note was on every plate forever and
+    // named six wells by name that nobody had left empty by mistake. The empty well worth
+    // reporting is one inside a region somebody assigned — see mapSamples in layout.ts.
     const data = parsePlate(referencePlateText())
-    const blanks = data.issues.filter((i) => i.code === IssueCode.NON_NUMERIC_CELL)
-    expect(blanks).toHaveLength(1)
-    expect(blanks[0]?.severity).toBe(Severity.INFO)
-    // 96 wells less the 24 that were plated: 9 standards read twice, two unknowns in triplicate.
-    expect(ctx(blanks[0], 'count')).toBe('72')
-    expect(blanks[0]?.message).toContain('72')
+    expect(codesOf(data.issues)).not.toContain(IssueCode.NON_NUMERIC_CELL)
+    expect(hasErrors(data.issues)).toBe(false)
+  })
+
+  it('still names a well whose detector saturated, which is news', () => {
+    // The rule above is about wells nobody plated, not about wells that failed to read.
+    const data = parsePlate(referencePlateText().replace('0.132', 'OVRFLW'))
+    expect(codesOf(data.issues)).toContain(IssueCode.OVERFLOW_CELL)
   })
 
   it('names a cell that is not a number, against the well it sits in', () => {

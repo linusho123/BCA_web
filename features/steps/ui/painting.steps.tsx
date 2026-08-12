@@ -192,12 +192,19 @@ Then('the standards are read as {int} replicates of {int}', (
 })
 
 Then('no issue is raised about a well outside an assignment', () => {
+  // Every unassigned well on the plate, not a spot check of five. An earlier version of this
+  // step named E1, F1, G1, H1 and D12 and passed while the page was listing A10, A11, A12, B10,
+  // B11 and B12 by name in a plate-wide note — the exact behaviour AC5 forbids. A five-well
+  // sample of ninety-six is not a check, it is a coincidence.
   const panel = document.querySelector('[data-testid="issue-panel"]')
   const text = panel?.textContent ?? ''
-  // D onwards is unassigned on this plate; nothing should be said about any of those wells.
-  for (const well of ['E1', 'F1', 'G1', 'H1', 'D12']) {
-    expect(text, `the page complained about unassigned well ${well}`).not.toContain(well)
-  }
+  const assigned = analysis.assignmentOf.value
+  const named = PLATE_ROWS.flatMap((row) => PLATE_COLUMNS.map((col) => `${row}${col}`))
+    .filter((well) => !assigned.has(well))
+    // Word boundaries so that A1 is not found inside A10, which would report a failure that
+    // is not there and hide the one that is.
+    .filter((well) => new RegExp(`\\b${well}\\b`).test(text))
+  expect(named.join(', '), 'unassigned wells the page complained about').toBe('')
 })
 
 Then('{string} reports a concentration from {int} wells', (
@@ -213,7 +220,14 @@ Then('an issue at warn severity names well {string}', (_w: unknown, well: string
   expect(panel?.textContent ?? '', `nothing was said about well ${well}`).toContain(well)
 })
 
-Then('the issue names {string} as the sample it belongs to', (_w: unknown, name: string) => {
+Then('an issue says {string} was averaged over {int} of its {int} wells', (
+  _w: unknown, name: string, measured: number, total: number,
+) => {
+  // Asserted as the whole sentence rather than as "the panel mentions MCF7 somewhere". The
+  // panel mentions MCF7 in the samples table too, so the loose version would pass with this
+  // issue never raised — which is the failure mode this scenario exists to catch.
   const panel = document.querySelector('[data-testid="issue-panel"]')
-  expect(panel?.textContent ?? '', `the issue did not name ${name}`).toContain(name)
+  expect(panel?.textContent ?? '', 'the shortfall was not reported').toContain(
+    `${name} is averaged over ${measured} of its ${total} wells`,
+  )
 })
