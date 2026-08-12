@@ -224,6 +224,30 @@ Then('the page reports the fit model as {string}', (_world: World, label: string
   expect(chosen?.textContent, 'the model the page says it is using').toBe(label)
 })
 
+Given('the worked example loaded', async () => {
+  mountOnce()
+  one('load-example').click()
+  await settle()
+})
+
+When('the session is started over', async () => {
+  // The button, not the action. "Start over" is a promise made to whoever presses it, and the
+  // only place that promise can be broken is between the button and the action.
+  one('reset').click()
+  await settle()
+})
+
+Then('the dilution factor is {int}', (_world: World, expected: number) => {
+  expect(analysis.dilutionFactor.value, 'the dilution factor after starting over').toBe(expected)
+})
+
+Then('the loading target is {int} ug in {int} uL', (
+  _world: World, protein: number, volume: number,
+) => {
+  expect(analysis.desiredProteinUg.value, 'protein per lane').toBe(protein)
+  expect(analysis.finalVolumeUL.value, 'final volume').toBe(volume)
+})
+
 When('blank subtraction is turned off', async () => {
   analysis.blankSubtract.value = false
   await settle()

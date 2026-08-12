@@ -155,7 +155,8 @@ export function AnalysisPage() {
               label="Dilution factor"
               value={analysis.dilutionFactor.value}
               onChange={(v) => (analysis.dilutionFactor.value = v)}
-              hint="How much the sample was diluted before it went in the well."
+              hint="Extra dilution you did to the sample yourself. 1 if none. The assay's own
+                    25 µL in 200 µL is already in the curve — the standards went through it too."
             />
 
             <Table

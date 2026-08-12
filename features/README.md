@@ -44,7 +44,7 @@ two without being rewritten.
 | `export/result-export.feature` | 12 | `domain/export` | F09 |
 | `analysis/curve-plot-geometry.feature` | 12 | `domain/plot` | F12, geometry half |
 | **`analysis/analysis-workflow.feature`** | 12 | the page, the pipeline, the promises | replaces F10 |
-| **`analysis/session-continuity.feature`** | 3 | the page before a plate is in it | replaces F10 |
+| **`analysis/session-continuity.feature`** | 4 | the page before a plate is in it | replaces F10 |
 | **`analysis/curve-plot-presentation.feature`** | 12 | the rendered chart | F12, presentation half |
 | **`analysis/plate-grid.feature`** | 9 | the 96 wells, typed into | scoped 2026-08-11 |
 | **`analysis/plate-layout-painting.feature`** | 10 | which wells hold which sample | scoped 2026-08-11 |

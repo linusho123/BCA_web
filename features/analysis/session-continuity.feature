@@ -20,9 +20,22 @@ Feature: Returning to a session
     AC1  The layout and the settings survive a reload; the plate deliberately does not.
     AC2  A session with no plate shows what to do, not a list of what is missing.
     AC3  A restored layout is a session in progress, not a session in error.
+    AC4  Starting over clears the settings too, including the ones the example brought.
 
   Background:
     Given the analysis page with the workbook's plate loaded
+
+  # AC4 — the worked example carries loading settings so that it computes end to end, and one
+  # of them is a dilution factor of 2, which is the workbook's own 1 in 2 on its unknowns. That
+  # is right for the workbook and wrong for the next plate: the assay's own 25 uL of sample in
+  # 200 uL of reagent applies to the standards as well, so it is already in the curve, and this
+  # field means only an extra dilution the researcher did themselves. Undiluted is 1. Leaving
+  # somebody else's 2 behind would understate every later result by half, and look fine.
+  Scenario: Starting over clears the settings the worked example brought with it
+    Given the worked example loaded
+    When the session is started over
+    Then the dilution factor is 1
+    And the loading target is 10 ug in 30 uL
 
   # AC1 — the session survives a reload, because a browser tab is not a safe place to think
   Scenario: The layout and settings are restored after a reload
