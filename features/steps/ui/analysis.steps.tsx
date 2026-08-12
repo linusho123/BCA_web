@@ -207,6 +207,23 @@ When('the loading target is set to {int} uL', async (_world: World, volume: numb
   await settle()
 })
 
+When('the fit model is changed to {string}', async (world: World, model: string) => {
+  recordBaseline(world)
+  // Driven through the control rather than by assigning the signal. AC8 is that the model is
+  // chosen *on the page*; setting the signal directly would pass with no control rendered,
+  // which is exactly the state this scenario was written to end.
+  const select = one('fit-model') as HTMLSelectElement
+  select.value = model
+  select.dispatchEvent(new Event('change', { bubbles: true }))
+  await settle()
+})
+
+Then('the page reports the fit model as {string}', (_world: World, label: string) => {
+  const select = one('fit-model') as HTMLSelectElement
+  const chosen = select.options[select.selectedIndex]
+  expect(chosen?.textContent, 'the model the page says it is using').toBe(label)
+})
+
 When('blank subtraction is turned off', async () => {
   analysis.blankSubtract.value = false
   await settle()

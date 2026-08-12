@@ -108,7 +108,7 @@ screen reader, or with reduced motion set loses nothing but convenience.
 | `unit` | node | 527 |
 | `acceptance` | node | 232 scenarios, 16 features |
 | `component` | Chromium | 9 |
-| `acceptance:ui` | Chromium | 66 scenarios, 6 features |
+| `acceptance:ui` | Chromium | 67 scenarios, 6 features |
 
 834 in total, all passing, no skips and no `@todo` tags.
 

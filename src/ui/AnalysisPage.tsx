@@ -14,7 +14,7 @@
 
 import { useEffect } from 'preact/hooks'
 import { Download } from 'lucide-preact'
-import { modelLabel } from '~/domain/constants'
+import { FitModel, modelLabel } from '~/domain/constants'
 import { num } from '~/domain/format'
 import { curveToCsv, loadingToCsv, samplesToCsv, sessionToJson } from '~/domain/export'
 import * as analysis from '~/state/analysis'
@@ -25,7 +25,14 @@ import { PlateImport } from './PlateImport'
 import { Table } from './Table'
 import { loadingColumns, sampleColumns, standardColumns } from './columns'
 import { download } from './download'
-import { NumberField, TextField, Toggle } from './fields'
+import { NumberField, Select, TextField, Toggle } from './fields'
+
+/** The three models the curve can be fitted with, highest degree first — see domain/curve.ts. */
+const FIT_MODELS = [
+  FitModel.INVERSE_CUBIC,
+  FitModel.INVERSE_QUADRATIC,
+  FitModel.INVERSE_LINEAR,
+] as const
 
 export function AnalysisPage() {
   // Persistence is a side effect of the settings changing, not something a save button does.
@@ -106,9 +113,14 @@ export function AnalysisPage() {
                 onChange={(v) => (analysis.blankSubtract.value = v)}
                 hint="Off reproduces the legacy workbook exactly."
               />
-              <p class="text-sm text-slate-600" data-testid="fit-model">
-                {modelLabel(analysis.fitModel.value)}
-              </p>
+              <Select
+                label="Curve model"
+                testId="fit-model"
+                value={analysis.fitModel.value}
+                options={FIT_MODELS.map((m) => [m, modelLabel(m)] as const)}
+                onChange={(v) => (analysis.fitModel.value = v)}
+                hint="Cubic matches the workbook. Lower degrees need fewer standards."
+              />
             </div>
 
             <CoefficientReadout />

@@ -135,3 +135,49 @@ export function Toggle({ label, hint, checked, onChange, testId }: ToggleProps) 
     </label>
   )
 }
+
+export interface SelectProps<T extends string> extends FieldShell {
+  value: T
+  options: ReadonlyArray<readonly [T, string]>
+  onChange: (value: T) => void
+  testId?: string
+}
+
+/**
+ * One of a short, fixed set of choices.
+ *
+ * A native `select` rather than a styled listbox: it is reachable by keyboard, announced by a
+ * screen reader, and on a phone it opens the platform picker. Three mutually exclusive options
+ * is exactly what the element is for, and a hand-rolled replacement would have to re-earn all
+ * of that to look slightly different.
+ */
+export function Select<T extends string>({
+  label,
+  hint,
+  value,
+  options,
+  onChange,
+  testId,
+}: SelectProps<T>) {
+  const hintId = useId()
+  return (
+    <label class="block text-sm">
+      <span class="font-medium text-slate-700">{label}</span>
+      <select
+        data-testid={testId}
+        class="mt-1 block rounded-md border border-slate-300 px-2 py-1.5 text-sm
+               focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+        value={value}
+        aria-describedby={hint === undefined || hint === '' ? undefined : hintId}
+        onChange={(e) => onChange((e.target as HTMLSelectElement).value as T)}
+      >
+        {options.map(([id, text]) => (
+          <option key={id} value={id}>
+            {text}
+          </option>
+        ))}
+      </select>
+      <Hint hint={hint} id={hintId} />
+    </label>
+  )
+}

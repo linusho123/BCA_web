@@ -25,6 +25,7 @@ Feature: Carrying a plate through the analysis workflow
     AC5  Issues are shown grouped by severity, with the stage that raised them named.
     AC6  Nothing is required to be typed twice; the plate feeds standards, samples and export.
     AC7  The worked example loads a session that computes cleanly end to end.
+    AC8  The fit model is chosen on the page, and choosing one refits everything after it.
 
   What a session looks like before a plate is in it — the empty page, and the one restored from
   a previous visit — is in session-continuity.feature.
@@ -51,6 +52,17 @@ Feature: Carrying a plate through the analysis workflow
     Then both samples report a loading volume
     And every lane in the loading plan is loadable
     And the issue panel reports nothing at error severity
+
+  # AC8 — the model is one of the three switches that change every reported number, so it
+  # belongs where the numbers are rather than in a constant. The domain has fitted all three
+  # since the port — standard-curve.feature AC7 — but until now the page only named the one
+  # in use, which made a documented capability unreachable.
+  Scenario: Choosing a different fit model refits the curve and the concentrations
+    Given the default layout applied with the names "MCF7" and "RPMI8226"
+    When the fit model is changed to "inverse_quadratic"
+    Then the curve coefficients change
+    And both samples' concentrations change
+    And the page reports the fit model as "Quadratic"
 
   # AC6 — the shape of the ordinary session, end to end
   Scenario: A pasted plate carries through to loading volumes without retyping
