@@ -13,19 +13,33 @@
  * a file input or a test, and only one of those three produces a real `File`.
  */
 
-import { UploadSchema, MAX_UPLOAD_BYTES } from '~/schemas/upload'
+import { MAX_UPLOAD_BYTES, readUpload } from '~/schemas/upload'
 import { decodePlateBytes } from '~/domain/plate'
 import * as analysis from '~/state/analysis'
 
+/**
+ * Read a chosen file and hand its text to the import.
+ *
+ * `readUpload` does the validating and the reading rather than this component doing its own.
+ * The component used to parse with `UploadSchema` and then call `arrayBuffer` on the *parsed*
+ * object, which is the schema's plain-object copy of the method with the file left behind: it
+ * threw on every real file, and because the caller only voided the promise, the page showed
+ * neither a grid nor a refusal. Two surfaces that both stayed silent.
+ *
+ * The catch is the other half of that lesson. Anything unexpected in here has to end as a
+ * refusal on screen, because the one outcome this feature may never have is nothing happening.
+ */
 async function readAndImport(file: unknown): Promise<void> {
-  const checked = UploadSchema.safeParse(file)
-  if (!checked.success) {
-    analysis.rejectImport(checked.error.issues[0]?.message ?? 'that file could not be read')
-    return
+  try {
+    const { bytes, issues } = await readUpload(file)
+    if (bytes === null) {
+      analysis.rejectImport(issues[0]?.message ?? 'that file could not be read')
+      return
+    }
+    analysis.importFile(decodePlateBytes(bytes).text)
+  } catch {
+    analysis.rejectImport('that file could not be read')
   }
-  const bytes = new Uint8Array(await checked.data.arrayBuffer())
-  const decoded = decodePlateBytes(bytes)
-  analysis.importFile(decoded.text)
 }
 
 export function PlateImport() {

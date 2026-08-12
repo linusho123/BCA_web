@@ -46,6 +46,11 @@ export function validatePlateText(raw: string): { text: string; issues: Issue[] 
  *
  * Checked structurally rather than with `instanceof File`, because the object arrives from a
  * drop event, a file input or a test, and only one of those three produces a real `File`.
+ *
+ * What this schema must never be used for is *calling* `arrayBuffer`. `z.object()` returns a new
+ * plain object, so the function on it is the `File`'s method with its receiver left behind, and
+ * calling it throws "Illegal invocation" on every real file a browser produces. Read the bytes
+ * off the original object — `readUpload` below does, and that is the only reason it works.
  */
 export const UploadSchema = z.object({
   name: z.string().default(''),
@@ -85,7 +90,12 @@ export async function readUpload(
   }
 
   try {
-    return { bytes: new Uint8Array(await parsed.data.arrayBuffer()), issues: [] }
+    // Called on `file`, not on `parsed.data`. The schema's copy is the method without its
+    // receiver; a browser's `File` rejects that with "Illegal invocation", which is exactly how
+    // the file button came to do nothing at all. The parse above is still what decides whether
+    // this object may be read; it just is not what it is read from.
+    const source = file as { arrayBuffer: () => Promise<ArrayBuffer> }
+    return { bytes: new Uint8Array(await source.arrayBuffer()), issues: [] }
   } catch {
     return {
       bytes: null,

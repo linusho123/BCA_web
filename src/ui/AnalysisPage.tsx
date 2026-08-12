@@ -13,6 +13,7 @@
  */
 
 import { useEffect } from 'preact/hooks'
+import { batch, useSignal } from '@preact/signals'
 import { Download } from 'lucide-preact'
 import { FitModel, modelLabel } from '~/domain/constants'
 import { num } from '~/domain/format'
@@ -264,16 +265,7 @@ function PlatePanel() {
       <PlateGrid />
 
       <div class="flex flex-wrap items-end gap-3">
-        <TextField
-          label="Sample names"
-          hint="Comma separated, in plate-row order from C down."
-          value={analysis.sampleNames.value.join(', ')}
-          onChange={(v) =>
-            analysis.applyDefaultLayout(
-              v.split(',').map((s) => s.trim()).filter((s) => s !== ''),
-            )
-          }
-        />
+        <SampleNamesField />
         <button
           type="button"
           data-testid="load-example"
@@ -292,6 +284,57 @@ function PlatePanel() {
         </button>
       </div>
     </section>
+  )
+}
+
+/**
+ * The sample names, as one comma-separated line.
+ *
+ * The box holds what was typed; the app publishes what that parses to. Those are not the same
+ * string and the field cannot be driven from the parsed list — that is the whole bug this
+ * component exists to fix. Rendering `names.join(', ')` meant the instant a comma was typed the
+ * trailing empty name was filtered away and the box redrawn one character shorter, so the comma
+ * vanished under the cursor and a second sample could never be named. The palette offers one
+ * entry per name, so a field that could only hold one name made painting a second sample
+ * unreachable — a whole feature closed off by a re-render.
+ *
+ * Held for exactly as long as the field is being edited, then dropped on blur so that "MCF7,,"
+ * reconciles to the "MCF7" the app actually took. This is the same arrangement `NumberField`
+ * uses for a half-typed "1.", for the same reason: a control that rewrites what is being typed
+ * cannot be typed into.
+ *
+ * The draft is a signal rather than `useState`, and that is not a preference. `useState` and a
+ * signal are two schedulers: the same keystroke calls `setDraft` and then `applyDefaultLayout`,
+ * and the signal write re-renders synchronously while the hook update is still queued. That
+ * render reads the previous draft and puts the published string back in the box — the original
+ * bug, now intermittent rather than constant, which is worse. One signal means one render with
+ * both facts already in it. A test that typed a comma caught this about one run in seven.
+ *
+ * `useSignal` rather than a module-level `signal`, because a module-level one would outlive the
+ * component: an abandoned half-typed name would still be in the box for the next person to
+ * mount the page, and in the suite it would leak from one scenario into the next.
+ */
+function SampleNamesField() {
+  const nameDraft = useSignal<string | null>(null)
+  const draft = nameDraft.value
+  const published = analysis.sampleNames.value.join(', ')
+
+  return (
+    <TextField
+      label="Sample names"
+      testId="sample-names"
+      hint="Comma separated, in plate-row order from C down."
+      value={draft ?? published}
+      onChange={(v) => {
+        batch(() => {
+          nameDraft.value = v
+          analysis.applyDefaultLayout(
+            v.split(',').map((s) => s.trim()).filter((s) => s !== ''),
+          )
+        })
+      }}
+      onBlur={() => (nameDraft.value = null)}
+    />
   )
 }
 

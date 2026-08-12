@@ -231,3 +231,44 @@ Then('an issue says {string} was averaged over {int} of its {int} wells', (
     `${name} is averaged over ${measured} of its ${total} wells`,
   )
 })
+
+/**
+ * Type into the sample-names field one character at a time, firing `input` for each.
+ *
+ * Not `field.value = 'MCF7, RPMI8226'` followed by one event. The defect this scenario exists
+ * for lives strictly between keystrokes: the field was controlled from the parsed list, so the
+ * moment the comma was typed the trailing empty name was filtered away and the box redrawn
+ * without it. Setting the whole string at once arrives at a state where every name is non-empty
+ * and passes over the very keystroke that fails.
+ *
+ * Typed onto whatever is in the box rather than from empty, because that is also what a person
+ * does, and it is what makes the re-render visible: if the value the app writes back disagrees
+ * with what was typed, the next character is appended to the app's version and the assertion
+ * sees the damage.
+ */
+When('{string} is typed into the sample names field', async (_w: unknown, text: string) => {
+  mountOnce()
+  const field = one('sample-names') as HTMLInputElement
+  field.value = ''
+  for (const char of text) {
+    field.value += char
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+    await settle()
+  }
+  await settle()
+})
+
+Then('the sample names field still reads {string}', (_w: unknown, expected: string) => {
+  const field = one('sample-names') as HTMLInputElement
+  expect(field.value, 'what the box holds after typing').toBe(expected)
+})
+
+Then('the palette offers {string} and {string}', (_w: unknown, first: string, second: string) => {
+  // Read off the rendered palette rather than off sampleNames, because AC8 is about being able
+  // to select a second sample to paint with. A signal holding two names and a palette drawing
+  // one would satisfy the signal-level check and still leave the sample unpaintable.
+  const offered = [...document.querySelectorAll('[data-testid^="paint-sample-"]')].map((b) =>
+    b.textContent.trim(),
+  )
+  expect(offered, 'the names the palette offers to paint with').toEqual([first, second])
+})

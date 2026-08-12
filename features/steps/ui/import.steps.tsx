@@ -1,11 +1,19 @@
 /**
  * Steps for features/analysis/plate-grid-from-file.feature.
  *
- * Files are handed to the state action as decoded text rather than driven through the file
- * input. A browser will not let a test put a real file on an `<input type="file">` without a
- * fixture on disk, and what these scenarios are about is what the app does with a file's
- * contents — the shape it accepts, the shapes it refuses, and what it leaves alone when it
- * refuses. The input element's own wiring is covered by driving the built app in a browser.
+ * Most files here are handed to the state action as decoded text rather than driven through the
+ * file input, because what those scenarios are about is what the app does with a file's contents
+ * — the shape it accepts, the shapes it refuses, and what it leaves alone when it refuses.
+ *
+ * The two file-button scenarios do not take that shortcut, and the reason is that the shortcut
+ * hid a total failure. Thirteen scenarios passed while choosing a file did nothing whatsoever:
+ * the schema hands back a plain object, so the `File`'s own `arrayBuffer` arrived detached from
+ * it and threw on call, into a promise nobody awaited. The claim "a file fills the grid" was
+ * true of every path except the only one a person can take.
+ *
+ * A real `File` is put on the input through a `DataTransfer`, which is how a browser lets a test
+ * do this without a fixture on disk. The earlier note here said a browser would not allow it;
+ * that was wrong, and it cost the feature its only honest test.
  */
 
 import { expect } from 'vitest'
@@ -85,6 +93,50 @@ When('a file holding no numbers at all is imported', async () => {
   mountOnce()
   analysis.importFile('Software Version,3.5.1\nPlate,Read 1\nOperator,LK')
   await settle()
+})
+
+/**
+ * Choose a file with the file button, the way a person does.
+ *
+ * The `File` is real and so is the `change` event: a `DataTransfer` is the one way to give an
+ * `<input type="file">` a value, since `files` is read-only and assigning to `value` throws.
+ * Nothing here reaches into the component — this is a click's worth of distance from the user.
+ *
+ * The wait is a poll rather than one `settle()`, because reading a file is asynchronous in a way
+ * a render is not: the change handler returns before the bytes arrive. Polling for the outcome
+ * fails by timing out rather than by racing, and the failure names which of the two surfaces the
+ * page never drew.
+ */
+async function chooseFile(text: string): Promise<void> {
+  mountOnce()
+  const input = one('import-file') as HTMLInputElement
+  const transfer = new DataTransfer()
+  transfer.items.add(new File([text], 'plate.csv', { type: 'text/csv' }))
+  input.files = transfer.files
+  input.dispatchEvent(new Event('change', { bubbles: true }))
+
+  for (let tick = 0; tick < 100; tick++) {
+    await settle()
+    if (
+      document.querySelector('[data-testid="import-report"]') !== null ||
+      document.querySelector('[data-testid="import-refusal"]') !== null
+    ) {
+      return
+    }
+  }
+  throw new Error(
+    'choosing a file drew neither a report nor a refusal: the file was never read. ' +
+      'This is the silent failure the scenario exists for — check the browser console for a ' +
+      'throw inside the change handler.',
+  )
+}
+
+When('an 8 by 12 grid is chosen with the file button', async () => {
+  await chooseFile(gridText(8, 12))
+})
+
+When('a file holding no numbers at all is chosen with the file button', async () => {
+  await chooseFile('Software Version,3.5.1\nPlate,Read 1\nOperator,LK')
 })
 
 Given('the workbook\'s plate loaded with wells {string} assigned to {string}', async (

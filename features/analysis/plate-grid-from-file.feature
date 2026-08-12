@@ -31,6 +31,7 @@ Feature: Filling the grid from a reader file
     AC5  An import that landed can be undone, restoring what was there before it.
     AC6  An import clears sample painting; nothing carries over onto new numbers.
     AC7  A refused import changes nothing at all.
+    AC8  A file chosen with the file button is read, through the button's own wiring.
 
   Every file below is a CSV exported from a plate reader. Sizes are given in rows by columns
   of the numeric block, not of the file, which may carry any amount of text around it.
@@ -93,6 +94,26 @@ Feature: Filling the grid from a reader file
   @negative
   Scenario: A file holding no grid is refused as holding none
     When a file holding no numbers at all is imported
+    Then the import is refused
+    And the refusal states that no grid was found
+
+  # AC8 — the path a researcher actually takes, which every scenario above steps around.
+  # The scenarios above hand decoded text to the state action, so all thirteen of them passed
+  # while choosing a file did nothing at all: the schema returns a plain object, so the file's
+  # own arrayBuffer came away detached from it and threw "Illegal invocation" into a promise
+  # nobody awaited. Silent — no grid, no refusal. This scenario is the only one that fails if
+  # that returns, so it puts a real file through the real input.
+  Scenario: Choosing a file with the file button fills the grid
+    When an 8 by 12 grid is chosen with the file button
+    Then well "A1" holds 0.132
+    And well "H12" holds 0.262
+    And the import is not refused
+
+  # AC8 and AC4 — a refusal has to survive the same wiring; a file that reaches the parser and
+  # one that never gets read both show nothing, and only this tells them apart.
+  @negative
+  Scenario: A file chosen with the file button that holds no grid is refused
+    When a file holding no numbers at all is chosen with the file button
     Then the import is refused
     And the refusal states that no grid was found
 

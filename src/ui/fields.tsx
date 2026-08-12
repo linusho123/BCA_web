@@ -31,6 +31,8 @@ export interface TextFieldProps extends FieldShell {
   onChange: (value: string) => void
   placeholder?: string
   testId?: string
+  /** Called when the field is left, for a caller holding a draft it wants to reconcile. */
+  onBlur?: () => void
 }
 
 export function TextField({
@@ -40,6 +42,7 @@ export function TextField({
   onChange,
   placeholder,
   testId,
+  onBlur,
 }: TextFieldProps) {
   const hintId = useId()
   return (
@@ -53,6 +56,7 @@ export function TextField({
         placeholder={placeholder}
         aria-describedby={hint === undefined || hint === '' ? undefined : hintId}
         onInput={(e) => onChange((e.target as HTMLInputElement).value)}
+        onBlur={onBlur}
       />
       <Hint hint={hint} id={hintId} />
     </label>

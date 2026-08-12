@@ -25,6 +25,7 @@ Feature: Painting which wells hold which sample
     AC5  A well nobody assigned is left out of the calculation and reported on by nothing.
     AC6  An empty well inside an assignment is reported, because it is declared work missing.
     AC7  Any new plate data clears sample painting; standards are re-derived from the plate.
+    AC8  Two names can be typed into the sample-names field, comma and all.
 
   The palette holds the standards, one entry per sample name, and an erase entry. Sample names
   come from the existing sample-names field, which the grid does not replace.
@@ -100,6 +101,16 @@ Feature: Painting which wells hold which sample
     Then an issue at warn severity names well "C2"
     And an issue says "MCF7" was averaged over 2 of its 3 wells
     And "MCF7" reports a concentration from 2 wells
+
+  # AC8 — the palette holds "one entry per sample name", which is worth nothing if only one
+  # name can be typed. The field was fully controlled from the parsed list, so the keystroke
+  # that produced a trailing empty name had it filtered away and the box rewritten without the
+  # comma: a second sample was unreachable. Typed here one key at a time, because the defect
+  # only exists between keystrokes and setting the value in one go steps over it.
+  Scenario: A second sample name can be typed after a comma
+    When "MCF7, RPMI8226" is typed into the sample names field
+    Then the sample names field still reads "MCF7, RPMI8226"
+    And the palette offers "MCF7" and "RPMI8226"
 
   # AC7 — the safety rule, applied to the path that makes it matter
   Scenario: A newly pasted plate clears the sample painting
