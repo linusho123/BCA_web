@@ -28,9 +28,11 @@ and no backend, so any static host will serve it. Assets are referenced relative
 in `vite.config.ts`), so it runs from a sub-path as happily as from a domain root, and routing is
 by hash, so the host needs no rewrite rules.
 
-`.github/workflows/deploy.yml` publishes to GitHub Pages on every push to `master` or `main`. It
-runs `npm run verify` first and the deploy depends on it, so a red suite does not become a
-published site. To turn it on, once:
+This repo is live at **<https://linusho123.github.io/BCA_web/>**.
+
+`.github/workflows/deploy.yml` publishes there on every push to `master` or `main`. It runs
+`npm run verify` first and the deploy depends on it, so a red suite does not become a published
+site. It is already switched on; setting it up again elsewhere is two commands:
 
 ```sh
 gh repo create BCA_web --private --source=. --push   # or add a remote by hand and push
@@ -40,28 +42,60 @@ gh api -X POST repos/:owner/BCA_web/pages -f build_type=workflow
 Or in the web UI: **Settings → Pages → Source → GitHub Actions**. The workflow needs no secret —
 it deploys through `id-token`, so there is nothing to rotate.
 
-One thing worth knowing before sharing the URL: the whole calculation runs in the browser, so
-publishing the app does not publish anyone's data. Absorbances never leave the machine that
-entered them, and are held only for the tab.
+**The repository is private; the published site is not.** Those are two different switches, and
+GitHub only ties them together on paid plans. On this account a private repo still serves a
+world-readable Pages site, so anyone with the URL can open the app and download the offline copy
+without a GitHub account — which is exactly what makes it shareable with the lab, and worth
+saying out loud so it is never mistaken for access control. The *code* stays private; the *app*
+is public to anyone holding the link.
+
+That is safe for the reason the top of this file gives: the whole calculation runs in the
+browser, so publishing the app does not publish anyone's data. Absorbances never leave the
+machine that entered them and are held only for the tab. What is public is the app and, through
+it, the worked example and the lab's dilution presets — nothing anyone runs through it.
+
+To make the site private too, the repo needs GitHub Pro or Team, then **Settings → Pages →
+Visibility → Private**; readers then need GitHub accounts with repo access.
 
 ### Sharing it with people who will not use a terminal
 
-Send them the URL. Nothing to install, works on any machine, and everyone is on the current
-version the moment it is pushed. That is the right answer for almost everybody.
+Send them the URL: **<https://linusho123.github.io/BCA_web/>**. Nothing to install, works on any
+machine, no GitHub account, and everyone is on the current version the moment it is pushed. That
+is the right answer for almost everybody, and the rest of this section is for the people it is
+not the right answer for.
 
-For anyone who needs it without a network — a bench laptop, a shared instrument PC, or a copy
-of the exact version used for a figure — `npm run build:standalone` writes
-`dist/bca-web.html`: the whole app, about 700 KB, in one file. Email it, drop it on a USB stick,
-put it on the shared drive. They **double-click it**; there is no server, no install and no
-terminal. Verified working from `file://`, including the worked example, painting, and the
-dilution and protocol pages.
+#### The offline copy — one file, no terminal, no install
 
-The deploy publishes that file too, so once the site is up it can be downloaded from
-`<site-url>/bca-web.html` rather than emailed around.
+For a bench laptop with no network, a shared instrument PC, or a frozen copy of the exact
+version used for a figure, the whole app also exists as **one HTML file of about 700 KB**.
+
+**To get it, with no commands at all:** open
+**<https://linusho123.github.io/BCA_web/bca-web.html>**, then save the page —
+`Cmd`/`Ctrl` + `S`, or right-click → *Save Page As…* — choosing **"Webpage, HTML Only"** if the
+browser offers a choice. That saved file *is* the app. There is nothing else to download.
+
+**To use it:** double-click it. It opens in the browser and works, offline, with no server, no
+install and no terminal. Email it, drop it on a USB stick, put it on the shared drive — it is a
+single file and it keeps working wherever it lands. Verified from `file://`, including import,
+painting, the worked example, and the dilution and protocol pages.
+
+Two notes for whoever hands it out. "HTML Only" matters: the *Complete* option writes a folder
+of extra files alongside it, which is harmless but no longer a single thing to email. And on
+Windows, browsers sometimes mark a downloaded HTML file as blocked — if it opens blank, right-
+click → *Properties* → **Unblock**.
+
+**To rebuild it from source** (only needed to cut a copy of an unpushed change):
+
+```sh
+npm run build:standalone   # writes dist/bca-web.html
+```
+
+The deploy runs that on every push, which is why the URL above always serves the current build.
 
 The trade-off is the obvious one: a downloaded copy is frozen. Someone using a file from March
 is using March's arithmetic. If people are going to keep copies, tell them where the URL is so
-they can check they are current.
+they can check they are current — and put the date in the filename before you send it, because
+`bca-web.html` on a shared drive tells nobody which version it is.
 
 ## The three pages
 
