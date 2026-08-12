@@ -22,7 +22,13 @@ import {
 } from '~/domain/constants'
 import { type CurveFit, fitCurve } from '~/domain/curve'
 import { IssueCode, issue, Severity, Stage } from '~/domain/errors'
-import { defaultLayout, checkOverlap, mapSamples, mapStandards } from '~/domain/layout'
+import {
+  defaultLayout,
+  checkOverlap,
+  mapSamples,
+  mapStandards,
+  parseRegion,
+} from '~/domain/layout'
 import { EMPTY_PLATE, parsePlate, rawGrid, writeWell, type PlateData } from '~/domain/plate'
 import { curvePlot, type CurvePlot } from '~/domain/plot'
 import {
@@ -219,6 +225,123 @@ export const issues = computed<readonly StagedIssue[]>(() =>
     ? collect(plate.value, mapping.value, curve.value, samples.value, loading.value)
     : [],
 )
+
+// --- painting ---------------------------------------------------------------
+
+/**
+ * What a click on a well currently means.
+ *
+ * A paint tool has a colour loaded, and this is it. `erase` is a target rather than a modifier
+ * key because the feature asks for it in the palette beside the names, where it can be reached
+ * by tab like everything else.
+ */
+export type PaintTarget =
+  | { readonly kind: 'off' }
+  | { readonly kind: 'sample'; readonly name: string }
+  | { readonly kind: 'standards' }
+  | { readonly kind: 'erase' }
+
+/**
+ * Off by default, and that is not timidity.
+ *
+ * Every well is a text input, so a click already means "put the cursor here" and a keystroke
+ * already means "change this reading". Painting has to borrow both, and a grid that painted
+ * whenever you clicked into a well to correct a typo would be worse than the text field it
+ * replaced. Selecting something from the palette is what arms it; "Type values" disarms it.
+ */
+export const painting = signal<PaintTarget>({ kind: 'off' })
+
+/** Whether a click on a well currently paints rather than just placing the cursor. */
+export const paintArmed = computed(() => painting.value.kind !== 'off')
+
+/** What the given well is assigned to, as the word shown in it. */
+export const assignmentOf = computed(() => {
+  const map = new Map<string, string>()
+  for (const region of standardRegions.value) {
+    for (const well of wellsOf(region)) map.set(well, 'std')
+  }
+  for (const [name, region] of sampleAssignments.value) {
+    for (const well of wellsOf(region)) map.set(well, name)
+  }
+  return map
+})
+
+const wellsOf = (region: string): string[] => parseRegion(region).wells
+
+/**
+ * Wells back into regions, one region per plate row.
+ *
+ * Per row, not one region for the lot, because `mapStandards` reads each region as one replicate
+ * of the whole series — the nth well of every region is the nth concentration. Row A and row B
+ * painted as standards are two reads of nine, which is what the plate is; eighteen wells in one
+ * region would be a series of eighteen concentrations that nobody ran.
+ */
+function regionsByRow(wells: Iterable<string>): string[] {
+  const rows = new Map<string, string[]>()
+  for (const well of wells) {
+    const row = well.slice(0, 1)
+    const list = rows.get(row)
+    if (list) list.push(well)
+    else rows.set(row, [well])
+  }
+  const column = (w: string) => Number(w.slice(1))
+  return [...rows.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, list]) => list.sort((a, b) => column(a) - column(b)).join(','))
+}
+
+/**
+ * Paint the given wells with whatever is selected, taking them off whatever held them before.
+ *
+ * A well belongs to one thing at a time, so painting is a move rather than an add — which is
+ * also what makes painting over a mistake the way to fix it, rather than something to undo
+ * first.
+ */
+export function paintWells(wells: readonly string[]): void {
+  const target = painting.value
+  const moving = new Set(wells)
+
+  const standards = new Set(standardRegions.value.flatMap(wellsOf))
+  const samples = new Map<string, Set<string>>()
+  for (const [name, region] of sampleAssignments.value) {
+    const held = samples.get(name) ?? new Set<string>()
+    for (const well of wellsOf(region)) held.add(well)
+    samples.set(name, held)
+  }
+
+  for (const well of moving) {
+    standards.delete(well)
+    for (const held of samples.values()) held.delete(well)
+  }
+
+  if (target.kind === 'standards') {
+    for (const well of moving) standards.add(well)
+  } else if (target.kind === 'sample') {
+    const held = samples.get(target.name) ?? new Set<string>()
+    for (const well of moving) held.add(well)
+    samples.set(target.name, held)
+  }
+
+  standardRegions.value = regionsByRow(standards)
+  sampleAssignments.value = [...samples.entries()]
+    .filter(([, held]) => held.size > 0)
+    .flatMap(([name, held]) => regionsByRow(held).map((region) => [name, region] as const))
+}
+
+/**
+ * Take a whole plate in, from the paste box or a file, and lay its standards out.
+ *
+ * Sample painting is cleared: carrying assignments from one plate onto another's numbers is how
+ * you analyse the wrong wells without noticing. Standards are not carried either — they are
+ * re-derived from the plate that just arrived, which for every plate this lab runs puts them
+ * back where they were. Typing into a single well is not this; that is editing the plate you
+ * already have, and it leaves the layout alone.
+ */
+export function pasteGrid(text: string): void {
+  plateText.value = text
+  sampleAssignments.value = []
+  standardRegions.value = defaultLayout(parsePlate(text), []).standardRegions
+}
 
 // --- actions ---------------------------------------------------------------
 

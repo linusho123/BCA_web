@@ -545,6 +545,27 @@ export function mapSamples(
 
     const read = readWells(data, parsed.wells, field)
     issues.push(...read.issues)
+
+    // An empty well inside an assignment is declared work missing, and the only empty well the
+    // app says anything about. A well nobody assigned is a leftover on a plate — reporting
+    // those would put a permanent complaint on every plate, since 96 wells always exist and
+    // most are deliberately unused. But a well someone said held this sample, holding nothing,
+    // means the mean below is over fewer replicates than the layout claims.
+    const blank = parsed.wells.filter((_well, i) => read.values[i] === null)
+    if (blank.length > 0) {
+      const measured = parsed.wells.length - blank.length
+      issues.push(
+        issue(
+          IssueCode.NON_NUMERIC_CELL,
+          Severity.WARN,
+          `${label}: well(s) ${blank.join(', ')} hold no measurement, so it is averaged over ` +
+            `${measured} of ${parsed.wells.length} wells`,
+          field,
+          { sample: label, wells: blank.join(',') },
+        ),
+      )
+    }
+
     samples.push({ name: label, replicates: read.values })
   }
 

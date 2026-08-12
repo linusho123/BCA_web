@@ -10,7 +10,7 @@ this repo.
 npm run verify
 ```
 
-It should be green: gherkin-lint, eslint, `tsc --noEmit`, 786 tests. If it is not green when you
+It should be green: gherkin-lint, eslint, `tsc --noEmit`, 795 tests. If it is not green when you
 arrive, find out why before writing anything — a red gate you did not cause is the most useful
 thing you will learn all session.
 

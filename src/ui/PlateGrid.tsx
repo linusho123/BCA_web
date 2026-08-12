@@ -24,9 +24,49 @@ import * as analysis from '~/state/analysis'
 export function PlateGrid() {
   const grid = analysis.grid.value
   const data = analysis.plate.value.value
+  const assigned = analysis.assignmentOf.value
+  const armed = analysis.paintArmed.value
+
+  const target = analysis.painting.value
+  const entries: Array<{ id: string; label: string; t: analysis.PaintTarget }> = [
+    { id: 'off', label: 'Type values', t: { kind: 'off' } },
+    { id: 'standards', label: 'Standards', t: { kind: 'standards' } },
+    ...analysis.sampleNames.value.map((name) => ({
+      id: `sample-${name}`,
+      label: name,
+      t: { kind: 'sample' as const, name },
+    })),
+    { id: 'erase', label: 'Erase', t: { kind: 'erase' } },
+  ]
+  const isCurrent = (t: analysis.PaintTarget) =>
+    t.kind === target.kind && (t.kind !== 'sample' || t.name === (target as { name?: string }).name)
 
   return (
     <div class="overflow-x-auto">
+      <div
+        role="radiogroup"
+        aria-label="What a click on a well means"
+        data-testid="palette"
+        class="mb-2 flex flex-wrap gap-1"
+      >
+        {entries.map((e) => (
+          <button
+            key={e.id}
+            type="button"
+            role="radio"
+            aria-checked={isCurrent(e.t)}
+            data-testid={`paint-${e.id}`}
+            class={`rounded-md border px-2 py-1 text-xs ${
+              isCurrent(e.t)
+                ? 'border-sky-600 bg-sky-50 font-medium text-sky-900'
+                : 'border-slate-300 hover:bg-slate-50'
+            }`}
+            onClick={() => (analysis.painting.value = e.t)}
+          >
+            {e.label}
+          </button>
+        ))}
+      </div>
       <table
         data-testid="plate-grid"
         class="border-separate border-spacing-0.5 text-xs"
@@ -57,8 +97,9 @@ export function PlateGrid() {
                 // "OVRFLW", or a typo. The entry stays where it was typed; what changes is
                 // that the well stops claiming to be a reading.
                 const unreadable = entry !== '' && wellValue(data, row, col) === null
+                const holds = assigned.get(well)
                 return (
-                  <td key={well}>
+                  <td key={well} class="align-top">
                     <input
                       type="text"
                       inputMode="decimal"
@@ -76,7 +117,33 @@ export function PlateGrid() {
                       onInput={(e) =>
                         analysis.typeIntoWell(well, (e.target as HTMLInputElement).value)
                       }
+                      onClick={() => {
+                        if (armed) analysis.paintWells([well])
+                      }}
+                      onKeyDown={(e) => {
+                        // Enter rather than space: space is a character in a number field, and a
+                        // well that could not hold "1 000" pasted from a spreadsheet would be a
+                        // keyboard affordance bought with a typing bug.
+                        if (armed && e.key === 'Enter') {
+                          e.preventDefault()
+                          analysis.paintWells([well])
+                        }
+                      }}
                     />
+                    {/*
+                      The assignment in words under the well. curve-plot-presentation AC1 says
+                      identity is never carried by colour alone, and this grid has a stronger
+                      claim on that rule than the chart does: the chart enhances a table holding
+                      the same numbers, while painting is the only way to assign a sample.
+                    */}
+                    <div
+                      data-testid={`assignment-${well}`}
+                      class={`h-3 text-center text-[10px] leading-3 ${
+                        holds === undefined ? 'text-transparent' : 'text-slate-600'
+                      }`}
+                    >
+                      {holds ?? ''}
+                    </div>
                   </td>
                 )
               })}

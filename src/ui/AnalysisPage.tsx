@@ -237,7 +237,7 @@ function PlatePanel() {
           class="mt-1 h-40 w-full rounded-md border border-slate-300 p-2 font-mono text-xs"
           placeholder="Paste the reader's grid — tab or comma separated, one row per plate row."
           value={analysis.plateText.value}
-          onInput={(e) => (analysis.plateText.value = (e.target as HTMLTextAreaElement).value)}
+          onInput={(e) => analysis.pasteGrid((e.target as HTMLTextAreaElement).value)}
         />
       </label>
 

@@ -85,9 +85,9 @@ screen reader, or with reduced motion set loses nothing but convenience.
 | `unit` | node | 493 |
 | `acceptance` | node | 232 scenarios, 16 features |
 | `component` | Chromium | 9 |
-| `acceptance:ui` | Chromium | 43 scenarios, 4 features |
+| `acceptance:ui` | Chromium | 52 scenarios, 5 features |
 
-786 in total, all passing, no skips and no `@todo` tags.
+795 in total, all passing, no skips and no `@todo` tags.
 
 The workflow is spec-first: a `.feature` file exists before the code that satisfies it, and every
 feature carries negative scenarios as well as happy paths. See `AGENTS.md` before changing
